@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-ivory: #F7F4ED;
+    --color-navy: #182536;
+    --color-burgundy: #873B45;
+    --color-gold: #B69A65;
+    --color-beige: #E5DFD3;
+  }
+
+  body {
+    background-color: #F7F4ED;
+    color: #182536;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, h4, .font-serif {
+    font-family: 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Custom philately details */
+.stamp-border {
+  border: 1px solid #E5DFD3;
+  box-shadow: 0 4px 18px rgba(24, 37, 54, 0.06);
+  position: relative;
+}
+
+/* Perforation edge effect */
+.stamp-perforations {
+  position: relative;
+  background-color: #FDFCF9;
+  filter: drop-shadow(0 4px 12px rgba(24, 37, 54, 0.08));
+}
+
+.stamp-perforations::before,
+.stamp-perforations::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+/* Postmark stamp seal */
+.postmark-seal {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1.5px dashed rgba(135, 59, 69, 0.45);
+  transform: rotate(-8deg);
+}
+
+/* Subtle vintage grid pattern */
+.bg-grid-ivory {
+  background-size: 28px 28px;
+  background-image: 
+    linear-gradient(to right, rgba(229, 223, 211, 0.35) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(229, 223, 211, 0.35) 1px, transparent 1px);
+}
+
+/* Smooth custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F7F4ED;
+}
+::-webkit-scrollbar-thumb {
+  background: #D5CDBD;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B69A65;
+}
