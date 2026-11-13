@@ -1,0 +1,29 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import MainLayout from './layouts/MainLayout';
+import HomePage from './pages/HomePage';
+import StampsPage from './pages/StampsPage';
+import MarketplacePage from './pages/MarketplacePage';
+import CommunityPage from './pages/CommunityPage';
+import CollectionPage from './pages/CollectionPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<MainLayout />}>
+          <Route index element={<HomePage />} />
+          <Route path="stamps" element={<StampsPage />} />
+          <Route path="marketplace" element={<MarketplacePage />} />
+          <Route path="community" element={<CommunityPage />} />
+          <Route path="collection" element={<CollectionPage />} />
+          <Route path="login" element={<LoginPage />} />
+          <Route path="register" element={<RegisterPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
+}
