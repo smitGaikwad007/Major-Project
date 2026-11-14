@@ -39,8 +39,11 @@ model CollectionItem {
   condition String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stamp     Stamp    @relation(fields: [stampId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  stamp     Stamp    @relation(fields: [stampId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([stampId])
 }
 
 model PdaApplication {
@@ -48,7 +51,7 @@ model PdaApplication {
   accountNumber   String            @unique
   holderName      String
   postalCircle    String
-  balance         Float             @default(0)
+  balance         Decimal           @default(0) @db.Decimal(12, 2)
   mintStamps      Boolean           @default(true)
   firstDayCovers  Boolean           @default(true)
   miniatureSheets Boolean           @default(false)
@@ -58,6 +61,8 @@ model PdaApplication {
   updatedAt       DateTime          @updatedAt
   user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   allocations     StampAllocation[]
+
+  @@index([userId])
 }
 
 model StampAllocation {
@@ -69,6 +74,10 @@ model StampAllocation {
   status            String          @default("ALLOTTED")
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
-  pdaApplication    PdaApplication? @relation(fields: [pdaApplicationId], references: [id], onDelete: Cascade)
+  pdaApplication    PdaApplication? @relation(fields: [pdaApplicationId], references: [id], onDelete: SetNull)
   stamp             Stamp?          @relation(fields: [stampId], references: [id], onDelete: SetNull)
+
+  @@index([pdaApplicationId])
+  @@index([stampId])
+  @@index([applicantId])
 }
