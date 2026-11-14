@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const prisma = require('../db/config');
 
 const WEIGHTS = [8, 6, 4, 2, 3, 5, 9, 7];
 
@@ -49,24 +50,64 @@ router.post('/check-stamp', (req, res) => {
   }
 
   const isValid = verifyChecksum(serial);
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
     serial,
     isValid,
-    formula: 'Sum(digit_i * weight_i) mod 11'
+    formula: 'Sum(digit_i * weight_i) mod 11',
   });
 });
 
-router.post('/fair-drop', (req, res) => {
-  const { applicants, stamps, seed } = req.body;
-  const winners = fairAllotment(applicants, stamps, seed);
+router.post('/fair-drop', async (req, res, next) => {
+  try {
+    const { applicants, stamps, seed, stampId, pdaApplicationId } = req.body;
+    const totalApplicants = Number(applicants) || 1;
+    const totalStamps = Number(stamps) || 1;
+    const winners = fairAllotment(totalApplicants, totalStamps, seed);
 
-  res.status(200).json({
-    success: true,
-    totalApplicants: Number(applicants) || 1,
-    totalStamps: Number(stamps) || 1,
-    winners
-  });
+    const allocationsData = winners.map((winnerId) => ({
+      applicantId: winnerId,
+      allocatedQuantity: 1,
+      status: 'ALLOTTED',
+      stampId: stampId || null,
+      pdaApplicationId: pdaApplicationId || null,
+    }));
+
+    await prisma.stampAllocation.createMany({
+      data: allocationsData,
+    });
+
+    return res.status(200).json({
+      success: true,
+      totalApplicants,
+      totalStamps,
+      winners,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/allocations', async (req, res, next) => {
+  try {
+    const allocations = await prisma.stampAllocation.findMany({
+      include: {
+        stamp: true,
+        pdaApplication: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      count: allocations.length,
+      data: allocations,
+    });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 module.exports = router;
