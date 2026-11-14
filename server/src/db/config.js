@@ -52,34 +52,60 @@ const initialStamps = [
   },
 ];
 
-async function seedDatabase() {
-  const count = await prisma.stamp.count();
-  if (count === 0) {
-    for (const stamp of initialStamps) {
-      await prisma.stamp.upsert({
-        where: { id: stamp.id },
-        update: {},
-        create: stamp,
-      });
-    }
+const initialPdaAccounts = [
+  {
+    accountNumber: 'PDA-MH-12345678-5',
+    holderName: 'Dr. Anandita Sen',
+    postalCircle: 'Maharashtra Circle (Mumbai GPO)',
+    balance: '8450.00',
+    mintStamps: true,
+    firstDayCovers: true,
+    miniatureSheets: true,
+  },
+  {
+    accountNumber: 'PDA-WB-87654321-4',
+    holderName: 'Prof. Debabrata Roy',
+    postalCircle: 'West Bengal Circle (Kolkata GPO)',
+    balance: '14200.00',
+    mintStamps: true,
+    firstDayCovers: true,
+    miniatureSheets: false,
+  },
+];
 
-    const collectionCount = await prisma.collectionItem.count();
-    if (collectionCount === 0) {
-      await prisma.collectionItem.create({
-        data: {
-          stampId: '1',
-          quantity: 1,
-          condition: 'Fine Used',
-        },
-      });
-      await prisma.collectionItem.create({
-        data: {
-          stampId: '3',
-          quantity: 2,
-          condition: 'Mint Never Hinged',
-        },
-      });
-    }
+async function seedDatabase() {
+  for (const stamp of initialStamps) {
+    await prisma.stamp.upsert({
+      where: { id: stamp.id },
+      update: {},
+      create: stamp,
+    });
+  }
+
+  const collectionCount = await prisma.collectionItem.count();
+  if (collectionCount === 0) {
+    await prisma.collectionItem.create({
+      data: {
+        stampId: '1',
+        quantity: 1,
+        condition: 'Fine Used',
+      },
+    });
+    await prisma.collectionItem.create({
+      data: {
+        stampId: '3',
+        quantity: 2,
+        condition: 'Mint Never Hinged',
+      },
+    });
+  }
+
+  for (const acc of initialPdaAccounts) {
+    await prisma.pdaApplication.upsert({
+      where: { accountNumber: acc.accountNumber },
+      update: {},
+      create: acc,
+    });
   }
 }
 

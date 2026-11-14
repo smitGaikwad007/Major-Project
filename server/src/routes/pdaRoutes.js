@@ -31,7 +31,7 @@ function formatPdaAccount(acc) {
     accountNumber: acc.accountNumber,
     holderName: acc.holderName,
     postalCircle: acc.postalCircle,
-    balance: acc.balance,
+    balance: parseFloat(Number(acc.balance).toFixed(2)),
     standingOrders: {
       mintStamps: acc.mintStamps,
       firstDayCovers: acc.firstDayCovers,
@@ -48,30 +48,7 @@ router.get('/accounts', async (req, res, next) => {
     });
 
     if (accounts.length === 0) {
-      await prisma.pdaApplication.createMany({
-        data: [
-          {
-            accountNumber: 'PDA-MH-12345678-5',
-            holderName: 'Dr. Anandita Sen',
-            postalCircle: 'Maharashtra Circle (Mumbai GPO)',
-            balance: 8450,
-            mintStamps: true,
-            firstDayCovers: true,
-            miniatureSheets: true,
-          },
-          {
-            accountNumber: 'PDA-WB-87654321-4',
-            holderName: 'Prof. Debabrata Roy',
-            postalCircle: 'West Bengal Circle (Kolkata GPO)',
-            balance: 14200,
-            mintStamps: true,
-            firstDayCovers: true,
-            miniatureSheets: false,
-          },
-        ],
-        skipDuplicates: true,
-      });
-
+      await prisma.seedDatabase();
       accounts = await prisma.pdaApplication.findMany({
         orderBy: { createdAt: 'desc' },
       });
@@ -103,13 +80,14 @@ router.post('/open', async (req, res, next) => {
     const circleCode = (postalCircle || 'MH').slice(0, 2).toUpperCase();
     const accountNumber = `PDA-${circleCode}-${baseSeq}-${check}`;
     const standing = standingOrders || {};
+    const deposit = Math.max(0, parseFloat(initialDeposit) || 1000).toFixed(2);
 
     const newAccount = await prisma.pdaApplication.create({
       data: {
         accountNumber,
         holderName: String(holderName).trim(),
         postalCircle: postalCircle || 'Maharashtra Circle',
-        balance: Number(initialDeposit) || 1000,
+        balance: deposit,
         mintStamps: standing.mintStamps !== undefined ? Boolean(standing.mintStamps) : true,
         firstDayCovers: standing.firstDayCovers !== undefined ? Boolean(standing.firstDayCovers) : true,
         miniatureSheets: standing.miniatureSheets !== undefined ? Boolean(standing.miniatureSheets) : false,
