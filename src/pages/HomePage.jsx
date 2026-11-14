@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Stamp,
@@ -17,6 +17,12 @@ import {
   ExternalLink,
   Lock,
   Landmark,
+  RefreshCw,
+  Plus,
+  Eye,
+  X,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import Button from '../components/Button';
 import SectionHeading from '../components/SectionHeading';
@@ -32,33 +38,122 @@ import {
   TESTIMONIALS,
 } from '../data/mockData';
 import postmarkSvg from '../assets/postmark-stamp.svg';
-
+import { stampApi, collectionApi, pdaApi } from '../services/api';
 
 export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState('all');
+  const [dbStamps, setDbStamps] = useState([]);
+  const [pdaAccount, setPdaAccount] = useState(null);
+  const [loadingStamps, setLoadingStamps] = useState(true);
+  const [stampError, setStampError] = useState(null);
+  const [selectedStamp, setSelectedStamp] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadInitialData() {
+      try {
+        setLoadingStamps(true);
+        const [stampsRes, pdaRes] = await Promise.all([
+          stampApi.getAll().catch(() => ({ data: [] })),
+          pdaApi.getAccounts().catch(() => ({ data: [] })),
+        ]);
+
+        if (mounted) {
+          if (stampsRes.data && stampsRes.data.length > 0) {
+            setDbStamps(stampsRes.data);
+          } else {
+            setDbStamps(RECENT_STAMPS);
+          }
+
+          if (pdaRes.data && pdaRes.data.length > 0) {
+            setPdaAccount(pdaRes.data[0]);
+          }
+        }
+      } catch (err) {
+        if (mounted) {
+          setStampError(err.message);
+          setDbStamps(RECENT_STAMPS);
+        }
+      } finally {
+        if (mounted) {
+          setLoadingStamps(false);
+        }
+      }
+    }
+
+    loadInitialData();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleAddToCollection = async (stamp) => {
+    try {
+      setToastMessage({ type: 'info', text: `Cataloging "${stamp.name}" into your vault...` });
+      await collectionApi.add({
+        stampId: stamp.id,
+        quantity: 1,
+        condition: 'Mint Never Hinged',
+      });
+      setToastMessage({ type: 'success', text: `Specimen "${stamp.name}" deposited into your vault!` });
+      setTimeout(() => setToastMessage(null), 4000);
+    } catch (err) {
+      setToastMessage({ type: 'error', text: err.message || 'Could not save to vault.' });
+      setTimeout(() => setToastMessage(null), 4000);
+    }
+  };
+
+  const stampsToDisplay = dbStamps.length > 0 ? dbStamps : RECENT_STAMPS;
 
   const filteredStamps =
     activeCategory === 'all'
-      ? RECENT_STAMPS
-      : RECENT_STAMPS.filter((s) =>
-          s.category.toLowerCase().includes(activeCategory.toLowerCase())
+      ? stampsToDisplay
+      : stampsToDisplay.filter((s) =>
+          (s.category || '').toLowerCase().includes(activeCategory.toLowerCase())
         );
 
   return (
     <div className="space-y-20 lg:space-y-28 pb-16">
-      
-      
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-md shadow-2xl">
+          <div
+            className={`p-4 border text-xs flex items-center justify-between gap-3 ${
+              toastMessage.type === 'success'
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+                : toastMessage.type === 'error'
+                ? 'bg-rose-50 border-rose-300 text-rose-950'
+                : 'bg-ivory-100 border-gold/40 text-navy'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {toastMessage.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+              ) : toastMessage.type === 'error' ? (
+                <AlertCircle className="w-4 h-4 text-rose-700 shrink-0" />
+              ) : (
+                <RefreshCw className="w-4 h-4 text-burgundy animate-spin shrink-0" />
+              )}
+              <span className="font-medium">{toastMessage.text}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setToastMessage(null)}
+              className="text-navy/50 hover:text-navy"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <section className="relative pt-8 sm:pt-14 pb-16 lg:pb-24 overflow-hidden border-b border-beige">
-        
         <div className="absolute inset-0 bg-grid-ivory pointer-events-none opacity-60" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-            
-            
             <div className="lg:col-span-7 space-y-6">
-              
-              
               <div className="inline-flex items-center gap-2.5 bg-ivory-100 border border-beige px-3.5 py-1.5 shadow-sm">
                 <span className="w-2 h-2 rounded-full bg-burgundy"></span>
                 <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-navy-800 font-semibold">
@@ -66,18 +161,15 @@ export default function HomePage() {
                 </span>
               </div>
 
-              
               <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-serif text-navy font-medium tracking-tight leading-[1.08]">
                 Every Stamp <br />
                 <span className="italic font-normal text-burgundy">Tells a Story.</span>
               </h1>
 
-              
               <p className="text-base sm:text-lg text-navy/75 leading-relaxed font-sans max-w-xl">
-                From the brittle red sealing-wax of the 1852 Scinde Dawk to the triumphant 1947 Jai Hind series, we curate and protect India’s living postal heritage. Connect with over 14,000 verified collectors, examine rare varieties under archival microscopy, and preserve history.
+                From the brittle red sealing-wax of the 1852 Scinde Dawk to the triumphant 1947 Jai Hind series, we curate and protect India's living postal heritage. Connect with over 14,000 verified collectors, examine rare varieties under archival microscopy, and preserve history.
               </p>
 
-              
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2">
                 <Button
                   to="/stamps"
@@ -90,16 +182,15 @@ export default function HomePage() {
                   Explore Postal Archive
                 </Button>
                 <Button
-                  to="/register"
+                  to="/collection"
                   variant="outline"
                   size="lg"
                   className="font-medium text-sm px-6 bg-white/70"
                 >
-                  Join the Society
+                  Open Vault
                 </Button>
               </div>
 
-              
               <div className="pt-6 border-t border-beige/80 flex flex-wrap items-center gap-6 text-xs text-navy/70">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-800 shrink-0" />
@@ -112,19 +203,12 @@ export default function HomePage() {
               </div>
             </div>
 
-            
             <div className="lg:col-span-5 relative flex justify-center">
-              
-              
               <div className="absolute -top-10 -left-10 w-36 h-36 pointer-events-none hidden sm:block -rotate-12 opacity-85 z-20">
                 <img src={postmarkSvg} alt="First Day of Issue Postmark" className="w-full h-full" />
               </div>
 
-
-              
               <div className="w-full max-w-md bg-white border border-beige p-5 sm:p-7 shadow-stamp hover:shadow-stamp-hover transition-all duration-300 relative">
-                
-                
                 <div className="flex items-center justify-between pb-3 border-b border-beige text-xs">
                   <span className="font-mono text-[10px] tracking-widest uppercase text-burgundy font-semibold">
                     Specimen Highlight
@@ -134,15 +218,11 @@ export default function HomePage() {
                   </span>
                 </div>
 
-                
                 <div className="my-5 p-4 bg-ivory-100 border border-beige-dark/60 shadow-inner relative overflow-hidden">
-                  
-                  
                   <div className="absolute top-4 left-4 z-10 bg-navy text-ivory text-xs font-serif font-bold px-2.5 py-1 border border-gold/40 shadow-sm">
                     3½ Annas
                   </div>
 
-                  
                   <div className="relative aspect-[4/3] bg-white border-2 border-dashed border-beige-dark/60 overflow-hidden flex items-center justify-center">
                     <img
                       src="https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80"
@@ -150,7 +230,6 @@ export default function HomePage() {
                       className="w-full h-full object-cover filter contrast-[1.05] sepia-[0.1]"
                     />
 
-                    
                     <div className="absolute right-3 bottom-3 w-20 h-20 rounded-full border-2 border-dashed border-burgundy/40 flex items-center justify-center rotate-12 pointer-events-none">
                       <div className="text-[8px] text-center font-mono text-burgundy/60 leading-tight font-bold">
                         DAK BHAVAN<br />★ 1947 ★<br />ARCHIVE
@@ -159,7 +238,6 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <h3 className="font-serif text-lg font-bold text-navy">
@@ -185,21 +263,14 @@ export default function HomePage() {
                     </Link>
                   </div>
                 </div>
-
               </div>
-
             </div>
-
           </div>
         </div>
       </section>
 
-
-      
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-navy-950 text-ivory border border-gold/30 p-8 sm:p-12 relative overflow-hidden shadow-sm">
-          
-          
           <div className="absolute -right-10 -bottom-10 w-60 h-60 rounded-full border border-gold/10 pointer-events-none flex items-center justify-center rotate-12">
             <Stamp className="w-32 h-32 text-gold/5" />
           </div>
@@ -230,17 +301,12 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-
         </div>
       </section>
 
-
-      
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white border border-beige p-8 sm:p-12 lg:p-16 relative">
-          
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            
             <div className="lg:col-span-6 space-y-5">
               <div className="inline-flex items-center gap-2">
                 <span className="w-5 h-[1px] bg-burgundy"></span>
@@ -258,7 +324,7 @@ export default function HomePage() {
               </p>
 
               <p className="text-sm sm:text-base text-navy/75 leading-relaxed">
-                Over 600 Princely States maintained their own feudatory postal networks—like Travancore’s sacred conch-marked Anchel system and Hyderabad’s Nizam post. The Collector’s Society was established to protect these fragile artifacts from international dispersion, creating an open scholarly haven for every Indian philatelist.
+                Over 600 Princely States maintained their own feudatory postal networks—like Travancore's sacred conch-marked Anchel system and Hyderabad's Nizam post. The Collector's Society was established to protect these fragile artifacts from international dispersion, creating an open scholarly haven for every Indian philatelist.
               </p>
 
               <div className="pt-2 flex items-center gap-4">
@@ -274,9 +340,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            
             <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
               <div className="bg-ivory-100 border border-beige p-5">
                 <div className="w-10 h-10 bg-burgundy/10 border border-burgundy/30 flex items-center justify-center mb-3">
                   <Stamp className="w-5 h-5 text-burgundy" />
@@ -297,7 +361,7 @@ export default function HomePage() {
                   1854 Inverted Head
                 </h4>
                 <p className="text-xs text-navy/70 leading-relaxed">
-                  One of the world’s very first bi-color stamps and India’s premier lithographic triumph printed at the Surveyor General’s office.
+                  One of the world's very first bi-color stamps and India's premier lithographic triumph printed at the Surveyor General's office.
                 </p>
               </div>
 
@@ -309,7 +373,7 @@ export default function HomePage() {
                   1911 First Aerial Post
                 </h4>
                 <p className="text-xs text-navy/70 leading-relaxed">
-                  World’s inaugural airmail flight from Allahabad to Naini across the sacred confluence of the Ganga and Yamuna.
+                  World's inaugural airmail flight from Allahabad to Naini across the sacred confluence of the Ganga and Yamuna.
                 </p>
               </div>
 
@@ -324,16 +388,11 @@ export default function HomePage() {
                   The sacred trio celebrating free India: the Ashoka Lion Capital, the National Tiranga, and the Douglas DC-4 aircraft.
                 </p>
               </div>
-
             </div>
-
           </div>
-
         </div>
       </section>
 
-
-      
       <section id="collections" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
           badge="CURATED EXHIBITS & MONOGRAPHS"
@@ -351,8 +410,6 @@ export default function HomePage() {
         </div>
       </section>
 
-
-      
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
           <div>
@@ -366,48 +423,51 @@ export default function HomePage() {
               Recently Cataloged Specimens
             </h2>
             <p className="text-sm text-navy/70 mt-1 max-w-xl">
-              Fresh additions from regional state archives, verified collector estates, and the National Philatelic Museum.
+              Fresh additions from regional state archives, verified collector estates, and the PostgreSQL repository.
             </p>
           </div>
 
-          
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
             <button
+              type="button"
               onClick={() => setActiveCategory('all')}
-              className={`px-3 py-1.5 transition-colors font-medium ${
+              className={`px-3 py-1.5 transition-colors font-medium border ${
                 activeCategory === 'all'
-                  ? 'bg-burgundy text-ivory font-semibold'
-                  : 'bg-white text-navy border border-beige hover:bg-ivory-200'
+                  ? 'bg-burgundy text-ivory border-burgundy font-semibold'
+                  : 'bg-white text-navy border-beige hover:bg-ivory-200'
               }`}
             >
-              All Eras ({RECENT_STAMPS.length})
+              All Eras ({stampsToDisplay.length})
             </button>
             <button
+              type="button"
               onClick={() => setActiveCategory('Pre-Imperial')}
-              className={`px-3 py-1.5 transition-colors font-medium ${
+              className={`px-3 py-1.5 transition-colors font-medium border ${
                 activeCategory === 'Pre-Imperial'
-                  ? 'bg-burgundy text-ivory font-semibold'
-                  : 'bg-white text-navy border border-beige hover:bg-ivory-200'
+                  ? 'bg-burgundy text-ivory border-burgundy font-semibold'
+                  : 'bg-white text-navy border-beige hover:bg-ivory-200'
               }`}
             >
               Pre-Imperial
             </button>
             <button
-              onClick={() => setActiveCategory('Classic British')}
-              className={`px-3 py-1.5 transition-colors font-medium ${
-                activeCategory === 'Classic British'
-                  ? 'bg-burgundy text-ivory font-semibold'
-                  : 'bg-white text-navy border border-beige hover:bg-ivory-200'
+              type="button"
+              onClick={() => setActiveCategory('Classic')}
+              className={`px-3 py-1.5 transition-colors font-medium border ${
+                activeCategory === 'Classic'
+                  ? 'bg-burgundy text-ivory border-burgundy font-semibold'
+                  : 'bg-white text-navy border-beige hover:bg-ivory-200'
               }`}
             >
               Classic India
             </button>
             <button
+              type="button"
               onClick={() => setActiveCategory('Republic')}
-              className={`px-3 py-1.5 transition-colors font-medium ${
+              className={`px-3 py-1.5 transition-colors font-medium border ${
                 activeCategory === 'Republic'
-                  ? 'bg-burgundy text-ivory font-semibold'
-                  : 'bg-white text-navy border border-beige hover:bg-ivory-200'
+                  ? 'bg-burgundy text-ivory border-burgundy font-semibold'
+                  : 'bg-white text-navy border-beige hover:bg-ivory-200'
               }`}
             >
               Republic 1947+
@@ -415,12 +475,30 @@ export default function HomePage() {
           </div>
         </div>
 
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {filteredStamps.map((stamp) => (
-            <StampCard key={stamp.id} stamp={stamp} />
-          ))}
-        </div>
+        {loadingStamps && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="bg-white border border-beige p-5 animate-pulse space-y-4">
+                <div className="h-4 bg-ivory-300 w-1/3"></div>
+                <div className="h-48 bg-ivory-200"></div>
+                <div className="h-5 bg-ivory-300 w-3/4"></div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loadingStamps && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {filteredStamps.map((stamp) => (
+              <StampCard
+                key={stamp.id}
+                stamp={stamp}
+                onExamine={(s) => setSelectedStamp(s)}
+                onAddToCollection={handleAddToCollection}
+              />
+            ))}
+          </div>
+        )}
 
         <div className="mt-12 text-center">
           <Button
@@ -431,7 +509,7 @@ export default function HomePage() {
             iconPosition="right"
             className="font-medium bg-white"
           >
-            Access Full Archive Database (52,000+ Items)
+            Access Full Archive Database
           </Button>
         </div>
       </section>
@@ -495,21 +573,27 @@ export default function HomePage() {
                 </div>
                 <div>
                   <div className="text-[10px] font-mono text-gold-400 uppercase tracking-widest">Active National PDA</div>
-                  <div className="font-mono text-xs text-ivory font-bold">PDA-MH-0018492-3</div>
+                  <div className="font-mono text-xs text-ivory font-bold">
+                    {pdaAccount ? pdaAccount.accountNumber : 'PDA-MH-12345678-5'}
+                  </div>
                 </div>
               </div>
               <div className="text-xs space-y-2 text-ivory/70">
                 <div className="flex justify-between">
                   <span>Circle:</span>
-                  <span className="text-ivory font-mono">Maharashtra (Mumbai GPO)</span>
+                  <span className="text-ivory font-mono">
+                    {pdaAccount ? pdaAccount.postalCircle : 'Maharashtra (Mumbai GPO)'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Balance:</span>
+                  <span className="text-gold-300 font-mono font-bold">
+                    ₹{pdaAccount ? Number(pdaAccount.balance).toLocaleString('en-IN') : '8,450'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Check Algorithm:</span>
-                  <span className="text-emerald-400 font-mono">Verhoeff D₅ Valid</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Standing Order:</span>
-                  <span className="text-ivory font-mono">Mint / FDC / Miniature</span>
+                  <span className="text-emerald-400 font-mono">Modulo-11 Active</span>
                 </div>
                 <div className="flex justify-between pt-2 border-t border-ivory/10">
                   <span>Archival Grade:</span>
@@ -521,10 +605,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-ivory-100 border border-beige p-6 sm:p-10 lg:p-12">
-          
           <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-6 mb-10 pb-6 border-b border-beige">
             <div>
               <div className="inline-flex items-center gap-2 mb-2">
@@ -553,7 +635,6 @@ export default function HomePage() {
             </Button>
           </div>
 
-          
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {MARKETPLACE_PREVIEW.map((item) => (
               <div
@@ -607,7 +688,6 @@ export default function HomePage() {
             ))}
           </div>
 
-          
           <div className="mt-8 pt-6 border-t border-beige flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-navy/70">
             <div className="flex items-center gap-2">
               <Lock className="w-4 h-4 text-gold-800 shrink-0" />
@@ -617,21 +697,17 @@ export default function HomePage() {
               Review Society Exchange Regulations →
             </Link>
           </div>
-
         </div>
       </section>
 
-
-      
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
           badge="FELLOWSHIP & COGNITIVE HERITAGE"
           title="The National Philatelic Fraternity"
-          subtitle="A vibrant network connecting local collector clubs from Kolkata's historic lanes to Bombay’s Fort district and Bengaluru's modern archives."
+          subtitle="A vibrant network connecting local collector clubs from Kolkata's historic lanes to Bombay's Fort district and Bengaluru's modern archives."
           align="center"
         />
 
-        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {COMMUNITY_PILLARS.map((pillar) => (
             <div
@@ -666,7 +742,6 @@ export default function HomePage() {
           ))}
         </div>
 
-        
         <div className="bg-white border border-beige p-8 sm:p-10">
           <div className="text-center max-w-xl mx-auto mb-8">
             <span className="text-[10px] font-mono uppercase tracking-widest text-gold-900 font-semibold block mb-1">
@@ -691,15 +766,10 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-
       </section>
 
-
-      
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-burgundy text-ivory border border-burgundy-900 p-8 sm:p-12 lg:p-16 relative overflow-hidden text-center shadow-lg">
-          
-          
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full border border-ivory/10 pointer-events-none flex items-center justify-center">
             <Stamp className="w-72 h-72 text-ivory/5" />
           </div>
@@ -736,10 +806,72 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
-
         </div>
       </section>
 
+      {selectedStamp && (
+        <div className="fixed inset-0 z-50 bg-navy-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-gold/40 max-w-lg w-full p-6 sm:p-8 relative shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setSelectedStamp(null)}
+              className="absolute top-4 right-4 text-navy/50 hover:text-navy p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-3 text-xs font-mono text-gold-900 uppercase tracking-wider">
+              <Stamp className="w-4 h-4 text-burgundy" />
+              <span>Specimen Inspection</span>
+            </div>
+
+            <div className="aspect-[4/3] bg-ivory-100 border border-beige overflow-hidden mb-4 flex items-center justify-center">
+              {selectedStamp.image ? (
+                <img
+                  src={selectedStamp.image}
+                  alt={selectedStamp.name}
+                  className="w-full h-full object-cover filter contrast-[1.05]"
+                />
+              ) : (
+                <Stamp className="w-16 h-16 text-gold" />
+              )}
+            </div>
+
+            <h3 className="font-serif text-xl font-bold text-navy mb-1">
+              {selectedStamp.name}
+            </h3>
+            <span className="text-burgundy font-semibold uppercase tracking-wider text-[11px] block mb-3">
+              {selectedStamp.category} • {selectedStamp.year || selectedStamp.issueYear}
+            </span>
+
+            <p className="text-xs text-navy/70 leading-relaxed mb-4">
+              {selectedStamp.description || 'Verified archival specimen in the national collection repository.'}
+            </p>
+
+            <div className="pt-3 border-t border-beige flex gap-3">
+              <Button
+                onClick={() => {
+                  handleAddToCollection(selectedStamp);
+                  setSelectedStamp(null);
+                }}
+                variant="primary"
+                size="md"
+                className="w-full text-xs"
+              >
+                Deposit in My Vault
+              </Button>
+              <Button
+                to="/stamps"
+                variant="outline"
+                size="md"
+                className="w-full text-xs"
+              >
+                Full Archive View
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

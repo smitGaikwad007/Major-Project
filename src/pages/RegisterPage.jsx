@@ -1,12 +1,31 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Stamp, ShieldCheck, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Stamp, ShieldCheck, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
 import Button from '../components/Button';
 
 export default function RegisterPage() {
+  const [fullName, setFullName] = useState('');
+  const [postalCircle, setPostalCircle] = useState('Maharashtra (Mumbai Circle)');
+  const [specialization, setSpecialization] = useState('');
+  const [email, setEmail] = useState('');
+  const [statusMessage, setStatusMessage] = useState(null);
+  const navigate = useNavigate();
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert("Application submission received! (Frontend mock mode: No backend or auth logic active).");
+    if (!fullName.trim() || !email.trim()) {
+      setStatusMessage({ type: 'error', text: 'Please complete all required fields.' });
+      return;
+    }
+
+    setStatusMessage({
+      type: 'success',
+      text: `Petition received for ${fullName}. Fellowship credentials dispatched to ${email}. Redirecting to Society Portal...`
+    });
+
+    setTimeout(() => {
+      navigate('/login');
+    }, 1500);
   };
 
   return (
@@ -18,7 +37,6 @@ export default function RegisterPage() {
       </div>
 
       <div className="bg-white border border-beige p-8 sm:p-10 shadow-sm">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="w-12 h-12 bg-burgundy mx-auto mb-3 border border-gold/50 flex items-center justify-center">
             <Stamp className="w-6 h-6 text-gold-300" />
@@ -34,7 +52,23 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {/* Membership Perks */}
+        {statusMessage && (
+          <div
+            className={`mb-6 p-4 border text-xs flex items-center gap-2 ${
+              statusMessage.type === 'success'
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+                : 'bg-rose-50 border-rose-300 text-rose-950'
+            }`}
+          >
+            {statusMessage.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-700 shrink-0" />
+            )}
+            <span>{statusMessage.text}</span>
+          </div>
+        )}
+
         <div className="mb-6 p-4 bg-ivory-100 border border-beige space-y-2 text-xs text-navy/80">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
@@ -54,22 +88,28 @@ export default function RegisterPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-navy/70 mb-1">
-                Full Name
+                Full Name *
               </label>
               <input
                 type="text"
-                placeholder="e.g. Vikramaditya Sen"
-                className="w-full px-3 py-2 text-sm bg-ivory-50 border border-beige focus:outline-none focus:border-gold"
                 required
+                placeholder="e.g. Vikramaditya Sen"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-ivory-50 border border-beige focus:outline-none focus:border-gold"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-navy/70 mb-1">
-                Postal State / Circle
+                Postal State / Circle *
               </label>
-              <select className="w-full px-3 py-2 text-sm bg-ivory-50 border border-beige focus:outline-none focus:border-gold">
-                <option>West Bengal (Kolkata Circle)</option>
+              <select
+                value={postalCircle}
+                onChange={(e) => setPostalCircle(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-ivory-50 border border-beige focus:outline-none focus:border-gold"
+              >
                 <option>Maharashtra (Mumbai Circle)</option>
+                <option>West Bengal (Kolkata Circle)</option>
                 <option>Delhi (Capital Circle)</option>
                 <option>Karnataka (Bengaluru Circle)</option>
                 <option>Tamil Nadu (Chennai Circle)</option>
@@ -87,19 +127,23 @@ export default function RegisterPage() {
             <input
               type="text"
               placeholder="e.g. Princely States, 1947 Republic, Aerophilately..."
+              value={specialization}
+              onChange={(e) => setSpecialization(e.target.value)}
               className="w-full px-3 py-2 text-sm bg-ivory-50 border border-beige focus:outline-none focus:border-gold"
             />
           </div>
 
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-navy/70 mb-1">
-              Email Address
+              Email Address *
             </label>
             <input
               type="email"
-              placeholder="collector@example.com"
-              className="w-full px-3 py-2 text-sm bg-ivory-50 border border-beige focus:outline-none focus:border-gold"
               required
+              placeholder="collector@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-3 py-2 text-sm bg-ivory-50 border border-beige focus:outline-none focus:border-gold"
             />
           </div>
 

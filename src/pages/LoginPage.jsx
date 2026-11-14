@@ -1,12 +1,29 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Stamp, Lock, ArrowLeft, Shield } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Stamp, Lock, ArrowLeft, Shield, CheckCircle2, AlertCircle } from 'lucide-react';
 import Button from '../components/Button';
 
 export default function LoginPage() {
+  const [email, setEmail] = useState('member@philatelysociety.in');
+  const [password, setPassword] = useState('••••••••••••');
+  const [statusMessage, setStatusMessage] = useState(null);
+  const navigate = useNavigate();
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert("Authentication logic is disabled in this frontend foundation preview.");
+    if (!email.trim() || !password.trim()) {
+      setStatusMessage({ type: 'error', text: 'Please enter valid member credentials.' });
+      return;
+    }
+
+    setStatusMessage({
+      type: 'success',
+      text: 'Society member authenticated successfully. Redirecting to your vault...'
+    });
+
+    setTimeout(() => {
+      navigate('/collection');
+    }, 1200);
   };
 
   return (
@@ -18,7 +35,6 @@ export default function LoginPage() {
       </div>
 
       <div className="bg-white border border-beige p-8 shadow-sm">
-        {/* Crest */}
         <div className="w-12 h-12 bg-burgundy mx-auto mb-4 border border-gold/50 flex items-center justify-center">
           <Stamp className="w-6 h-6 text-gold-300" />
         </div>
@@ -30,6 +46,23 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {statusMessage && (
+          <div
+            className={`mb-4 p-3 border text-xs flex items-center gap-2 ${
+              statusMessage.type === 'success'
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+                : 'bg-rose-50 border-rose-300 text-rose-950'
+            }`}
+          >
+            {statusMessage.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-700 shrink-0" />
+            )}
+            <span>{statusMessage.text}</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-navy/70 mb-1">
@@ -37,7 +70,8 @@ export default function LoginPage() {
             </label>
             <input
               type="text"
-              defaultValue="member@philatelysociety.in"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 text-sm bg-ivory-50 border border-beige focus:outline-none focus:border-gold"
               required
             />
@@ -54,7 +88,8 @@ export default function LoginPage() {
             </div>
             <input
               type="password"
-              defaultValue="••••••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 text-sm bg-ivory-50 border border-beige focus:outline-none focus:border-gold"
               required
             />
