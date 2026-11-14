@@ -1,8 +1,10 @@
 require('dotenv').config();
 const app = require('./app');
+const prisma = require('./db/config');
 
-// Default port is 5000, configurable via environment variable
 const PORT = process.env.PORT || 5000;
+
+prisma.seedDatabase().catch(() => {});
 
 const server = app.listen(PORT, () => {
   console.log(`====================================================`);
@@ -11,7 +13,6 @@ const server = app.listen(PORT, () => {
   console.log(`====================================================`);
 });
 
-// Gracefully handle port collisions (e.g. macOS AirPlay Receiver on port 5000)
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
     const fallbackPort = Number(PORT) + 1;

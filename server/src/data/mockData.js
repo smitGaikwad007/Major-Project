@@ -1,11 +1,3 @@
-/**
- * Temporary In-Memory Philately Datasets
- * 
- * NOTE: All data is stored in JavaScript arrays in memory.
- * Any additions or deletions will reset when the server restarts.
- */
-
-// Initial collection of Indian postage stamps
 const stamps = [
   {
     id: "1",
@@ -54,7 +46,6 @@ const stamps = [
   },
 ];
 
-// Initial user collection items
 const collection = [
   {
     id: "col_1",
