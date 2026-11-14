@@ -1,12 +1,10 @@
-import React from 'react';
-import { ArrowRight, BookOpen, Layers } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowRight, BookOpen, Layers, Stamp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-/**
- * Archival Collection Card Component
- * Highlights curated philatelic exhibits, historical context, and curator metadata.
- */
 export default function CollectionCard({ collection, className = '' }) {
+  const [imageError, setImageError] = useState(false);
+
   const {
     id,
     title,
@@ -25,22 +23,27 @@ export default function CollectionCard({ collection, className = '' }) {
       className={`group bg-white border border-beige flex flex-col justify-between transition-all duration-300 hover:border-gold hover:shadow-stamp-hover ${className}`}
     >
       <div>
-        {/* Cover Image & Category Frame */}
         <div className="relative aspect-[16/9] overflow-hidden bg-ivory-200 border-b border-beige">
-          <img
-            src={coverImage}
-            alt={title}
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 filter contrast-[1.02]"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-navy-950/80 via-navy-950/20 to-transparent" />
+          {!imageError && coverImage ? (
+            <img
+              src={coverImage}
+              alt={title}
+              className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 filter contrast-[1.02]"
+              onError={() => setImageError(true)}
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-navy-900 text-gold p-6 text-center">
+              <Stamp className="w-12 h-12 mb-2 text-gold-400" />
+              <span className="font-serif text-lg font-bold text-ivory">{title}</span>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-navy-950/80 via-navy-950/20 to-transparent pointer-events-none" />
 
-          {/* Period pill */}
           <div className="absolute top-3 left-3 bg-ivory/95 backdrop-blur-sm text-navy px-2.5 py-1 text-xs font-mono font-semibold tracking-wider border border-beige">
             {period}
           </div>
 
-          {/* Category & Item count */}
           <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-ivory text-xs">
             <span className="font-semibold text-gold-300 tracking-wide uppercase text-[11px]">
               {category}
@@ -52,7 +55,6 @@ export default function CollectionCard({ collection, className = '' }) {
           </div>
         </div>
 
-        {/* Content Body */}
         <div className="p-5 sm:p-6">
           <div className="text-[11px] font-sans font-semibold tracking-widest text-burgundy uppercase mb-1.5">
             {rarity}
@@ -66,7 +68,6 @@ export default function CollectionCard({ collection, className = '' }) {
             {description}
           </p>
 
-          {/* Curatorial Attribution */}
           <div className="pt-3 border-t border-beige/60 text-xs text-navy/60 flex items-center gap-2">
             <BookOpen className="w-3.5 h-3.5 text-gold-800 shrink-0" />
             <span className="truncate">Curated by <strong className="text-navy-900 font-medium">{curator}</strong></span>
@@ -74,7 +75,6 @@ export default function CollectionCard({ collection, className = '' }) {
         </div>
       </div>
 
-      {/* Footer Tags & Link */}
       <div className="px-5 pb-5 pt-0 sm:px-6 sm:pb-6 flex items-center justify-between border-t border-beige/40 mt-2 pt-3">
         <div className="flex flex-wrap gap-1.5">
           {tags?.slice(0, 2).map((tag, idx) => (

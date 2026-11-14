@@ -1,21 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Stamp, Mail, ShieldCheck, MapPin, Award, Compass, ArrowUpRight } from 'lucide-react';
+import { Stamp, Mail, ShieldCheck, MapPin, Award, CheckCircle2 } from 'lucide-react';
 import Button from './Button';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+    if (email.trim()) {
+      setSubscribed(true);
+      setEmail('');
+      setTimeout(() => setSubscribed(false), 5000);
+    }
+  };
 
   return (
     <footer className="bg-navy-950 text-ivory/80 border-t border-navy-800 relative overflow-hidden font-sans">
-      {/* Decorative Postal Stamp Background Mark */}
       <div className="absolute top-10 right-10 w-96 h-96 rounded-full border-[1.5px] border-dashed border-gold/10 pointer-events-none -mr-32 -mt-20 flex items-center justify-center rotate-45 select-none">
         <span className="text-gold/10 font-serif text-3xl uppercase tracking-[0.3em]">
           Dak Bhavan • Postmark Archive
         </span>
       </div>
 
-      {/* Top Gazette Subscription Banner */}
       <div className="border-b border-navy-800/80 bg-navy-900/60 py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-6">
           <div className="flex items-start sm:items-center gap-4">
@@ -32,31 +41,33 @@ export default function Footer() {
             </div>
           </div>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              alert("Thank you for subscribing to The Philatelist's Gazette!");
-            }}
-            className="w-full lg:w-auto flex flex-col sm:flex-row gap-2 max-w-md"
-          >
-            <input
-              type="email"
-              required
-              placeholder="Enter your email address..."
-              className="bg-navy-950 border border-navy-700 text-ivory text-sm px-4 py-2.5 focus:outline-none focus:border-gold placeholder:text-ivory/40 min-w-[260px]"
-            />
-            <Button variant="gold" size="md" type="submit" className="shrink-0 text-xs uppercase tracking-wider font-semibold">
-              Subscribe
-            </Button>
-          </form>
+          <div className="w-full lg:w-auto max-w-md">
+            {subscribed ? (
+              <div className="p-3 bg-emerald-950 border border-emerald-700 text-emerald-300 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Subscription verified. Dispatches will arrive quarterly.</span>
+              </div>
+            ) : (
+              <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email address..."
+                  className="bg-navy-950 border border-navy-700 text-ivory text-sm px-4 py-2.5 focus:outline-none focus:border-gold placeholder:text-ivory/40 min-w-[260px]"
+                />
+                <Button variant="gold" size="md" type="submit" className="shrink-0 text-xs uppercase tracking-wider font-semibold">
+                  Subscribe
+                </Button>
+              </form>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Main Footer Links Columns */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8">
-          
-          {/* Brand & Headquarters Info */}
           <div className="lg:col-span-2 space-y-5">
             <Link to="/" className="flex items-center gap-3">
               <div className="w-10 h-10 bg-burgundy text-ivory flex items-center justify-center border border-gold/40 relative">
@@ -67,7 +78,7 @@ export default function Footer() {
                   PHILATELY
                 </span>
                 <span className="text-[10px] uppercase font-semibold tracking-[0.2em] text-gold-400 mt-1 block">
-                  The Collector’s Society
+                  The Collector's Society
                 </span>
               </div>
             </Link>
@@ -88,7 +99,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Column 1: Archival Galleries */}
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-400 mb-4 font-mono">
               Archival Galleries
@@ -122,7 +132,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Column 2: Collector Services */}
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-400 mb-4 font-mono">
               Collector Services
@@ -134,13 +143,13 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/community" className="hover:text-gold transition-colors">
-                  Watermark & Perforation Analysis
+                <Link to="/pda" className="hover:text-gold transition-colors">
+                  Modulo-11 Stamp Verifier
                 </Link>
               </li>
               <li>
-                <Link to="/community" className="hover:text-gold transition-colors">
-                  Certificate of Provenance Desk
+                <Link to="/pda" className="hover:text-gold transition-colors">
+                  National PDA Portal
                 </Link>
               </li>
               <li>
@@ -156,7 +165,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Column 3: The Society */}
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-400 mb-4 font-mono">
               The Society
@@ -189,15 +197,13 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-
         </div>
       </div>
 
-      {/* Bottom Bar: Copyright & Stamp Cancellation Seal */}
       <div className="border-t border-navy-900 bg-navy-950 py-6 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-ivory/50">
           <div>
-            © {currentYear} Philately – The Collector’s Society. All rights reserved. Registered Indian Cultural Heritage Guild.
+            © {currentYear} Philately – The Collector's Society. All rights reserved. Registered Indian Cultural Heritage Guild.
           </div>
 
           <div className="flex items-center gap-6">

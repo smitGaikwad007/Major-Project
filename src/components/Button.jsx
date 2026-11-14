@@ -1,10 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-/**
- * Vintage Editorial Button Component
- * Supports multiple philatelic themes: primary (burgundy), secondary (navy), gold, outline, and ghost.
- */
 export default function Button({
   children,
   to,
@@ -19,7 +15,7 @@ export default function Button({
   disabled = false,
   ...props
 }) {
-  const baseStyles = "inline-flex items-center justify-center font-medium transition-all duration-200 tracking-wide select-none disabled:opacity-50 disabled:pointer-events-none focus:outline-none focus:ring-2 focus:ring-gold/40 focus:ring-offset-2 focus:ring-offset-ivory";
+  const baseStyles = "inline-flex items-center justify-center font-medium transition-all duration-200 tracking-wide select-none disabled:opacity-50 disabled:pointer-events-none focus:outline-none focus:ring-2 focus:ring-gold/40 focus:ring-offset-2 focus:ring-offset-ivory cursor-pointer disabled:cursor-not-allowed";
 
   const sizeStyles = {
     sm: "text-xs px-3.5 py-1.5 gap-1.5 rounded-sm",
