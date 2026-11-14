@@ -23,14 +23,12 @@
   }
 }
 
-/* Custom philately details */
 .stamp-border {
   border: 1px solid #E5DFD3;
   box-shadow: 0 4px 18px rgba(24, 37, 54, 0.06);
   position: relative;
 }
 
-/* Perforation edge effect */
 .stamp-perforations {
   position: relative;
   background-color: #FDFCF9;
@@ -44,7 +42,6 @@
   pointer-events: none;
 }
 
-/* Postmark stamp seal */
 .postmark-seal {
   position: relative;
   display: inline-flex;
@@ -55,7 +52,6 @@
   transform: rotate(-8deg);
 }
 
-/* Subtle vintage grid pattern */
 .bg-grid-ivory {
   background-size: 28px 28px;
   background-image: 
@@ -63,7 +59,6 @@
     linear-gradient(to bottom, rgba(229, 223, 211, 0.35) 1px, transparent 1px);
 }
 
-/* Smooth custom scrollbars */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

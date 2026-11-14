@@ -1,8 +1,3 @@
-/**
- * National Philately Society of India - Curated Mock Data
- * Authentic specimens, collections, marketplace listings, and society statistics.
- */
-
 export const SOCIETY_INFO = {
   name: "Philately",
   tagline: "The Collector’s Society",
