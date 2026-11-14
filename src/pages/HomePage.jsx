@@ -16,6 +16,7 @@ import {
   MapPin,
   ExternalLink,
   Lock,
+  Landmark,
 } from 'lucide-react';
 import Button from '../components/Button';
 import SectionHeading from '../components/SectionHeading';
@@ -46,18 +47,18 @@ export default function HomePage() {
   return (
     <div className="space-y-20 lg:space-y-28 pb-16">
       
-      {/* 1. HERO SECTION */}
+      
       <section className="relative pt-8 sm:pt-14 pb-16 lg:pb-24 overflow-hidden border-b border-beige">
-        {/* Subtle Archival Grid Background */}
+        
         <div className="absolute inset-0 bg-grid-ivory pointer-events-none opacity-60" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             
-            {/* Left Column: Heading, Narrative, and Actions */}
+            
             <div className="lg:col-span-7 space-y-6">
               
-              {/* Guild Eyebrow Tag */}
+              
               <div className="inline-flex items-center gap-2.5 bg-ivory-100 border border-beige px-3.5 py-1.5 shadow-sm">
                 <span className="w-2 h-2 rounded-full bg-burgundy"></span>
                 <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-navy-800 font-semibold">
@@ -65,18 +66,18 @@ export default function HomePage() {
                 </span>
               </div>
 
-              {/* Primary Hero Heading */}
+              
               <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-serif text-navy font-medium tracking-tight leading-[1.08]">
                 Every Stamp <br />
                 <span className="italic font-normal text-burgundy">Tells a Story.</span>
               </h1>
 
-              {/* Introduction Narrative */}
+              
               <p className="text-base sm:text-lg text-navy/75 leading-relaxed font-sans max-w-xl">
                 From the brittle red sealing-wax of the 1852 Scinde Dawk to the triumphant 1947 Jai Hind series, we curate and protect India’s living postal heritage. Connect with over 14,000 verified collectors, examine rare varieties under archival microscopy, and preserve history.
               </p>
 
-              {/* Action Buttons */}
+              
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2">
                 <Button
                   to="/stamps"
@@ -98,7 +99,7 @@ export default function HomePage() {
                 </Button>
               </div>
 
-              {/* Trust Indicators */}
+              
               <div className="pt-6 border-t border-beige/80 flex flex-wrap items-center gap-6 text-xs text-navy/70">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-800 shrink-0" />
@@ -111,19 +112,19 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Right Column: Authentic Editorial Stamp Exhibition Card */}
+            
             <div className="lg:col-span-5 relative flex justify-center">
               
-              {/* Outer Postmark Motif Behind Stamp */}
+              
               <div className="absolute -top-10 -left-10 w-36 h-36 pointer-events-none hidden sm:block -rotate-12 opacity-85 z-20">
                 <img src={postmarkSvg} alt="First Day of Issue Postmark" className="w-full h-full" />
               </div>
 
 
-              {/* Main Stamp Specimen Display Frame */}
+              
               <div className="w-full max-w-md bg-white border border-beige p-5 sm:p-7 shadow-stamp hover:shadow-stamp-hover transition-all duration-300 relative">
                 
-                {/* Stamp Header Ribbon */}
+                
                 <div className="flex items-center justify-between pb-3 border-b border-beige text-xs">
                   <span className="font-mono text-[10px] tracking-widest uppercase text-burgundy font-semibold">
                     Specimen Highlight
@@ -133,15 +134,15 @@ export default function HomePage() {
                   </span>
                 </div>
 
-                {/* Perforated Inner Stamp Mount */}
+                
                 <div className="my-5 p-4 bg-ivory-100 border border-beige-dark/60 shadow-inner relative overflow-hidden">
                   
-                  {/* Denomination badge */}
+                  
                   <div className="absolute top-4 left-4 z-10 bg-navy text-ivory text-xs font-serif font-bold px-2.5 py-1 border border-gold/40 shadow-sm">
                     3½ Annas
                   </div>
 
-                  {/* Stamp artwork with authentic vintage filter */}
+                  
                   <div className="relative aspect-[4/3] bg-white border-2 border-dashed border-beige-dark/60 overflow-hidden flex items-center justify-center">
                     <img
                       src="https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80"
@@ -149,7 +150,7 @@ export default function HomePage() {
                       className="w-full h-full object-cover filter contrast-[1.05] sepia-[0.1]"
                     />
 
-                    {/* Circular ink cancellation seal simulation */}
+                    
                     <div className="absolute right-3 bottom-3 w-20 h-20 rounded-full border-2 border-dashed border-burgundy/40 flex items-center justify-center rotate-12 pointer-events-none">
                       <div className="text-[8px] text-center font-mono text-burgundy/60 leading-tight font-bold">
                         DAK BHAVAN<br />★ 1947 ★<br />ARCHIVE
@@ -158,7 +159,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Specimen Description */}
+                
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <h3 className="font-serif text-lg font-bold text-navy">
@@ -194,11 +195,11 @@ export default function HomePage() {
       </section>
 
 
-      {/* 2. STATISTICS SECTION */}
+      
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-navy-950 text-ivory border border-gold/30 p-8 sm:p-12 relative overflow-hidden shadow-sm">
           
-          {/* Subtle vintage postmark stamp in background */}
+          
           <div className="absolute -right-10 -bottom-10 w-60 h-60 rounded-full border border-gold/10 pointer-events-none flex items-center justify-center rotate-12">
             <Stamp className="w-32 h-32 text-gold/5" />
           </div>
@@ -234,7 +235,7 @@ export default function HomePage() {
       </section>
 
 
-      {/* 3. SHORT INTRODUCTION TO INDIAN PHILATELY COMMUNITY */}
+      
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white border border-beige p-8 sm:p-12 lg:p-16 relative">
           
@@ -273,7 +274,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Archival Vignette Cards */}
+            
             <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               
               <div className="bg-ivory-100 border border-beige p-5">
@@ -332,7 +333,7 @@ export default function HomePage() {
       </section>
 
 
-      {/* 4. FEATURED STAMP COLLECTIONS */}
+      
       <section id="collections" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
           badge="CURATED EXHIBITS & MONOGRAPHS"
@@ -351,7 +352,7 @@ export default function HomePage() {
       </section>
 
 
-      {/* 5. RECENTLY ADDED STAMPS */}
+      
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
           <div>
@@ -369,7 +370,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Category Filter Pills */}
+          
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
             <button
               onClick={() => setActiveCategory('all')}
@@ -414,7 +415,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Grid of Stamp Specimens */}
+        
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {filteredStamps.map((stamp) => (
             <StampCard key={stamp.id} stamp={stamp} />
@@ -435,8 +436,92 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-gradient-to-r from-navy-950 via-navy-900 to-navy-800 text-ivory border-2 border-gold/40 p-8 sm:p-12 relative overflow-hidden shadow-vintage">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 mb-3">
+                <span className="w-6 h-[1px] bg-gold"></span>
+                <span className="text-[11px] font-mono tracking-widest text-gold-400 uppercase font-semibold">
+                  DAK BHAVAN NATIONAL INITIATIVE
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif text-ivory font-bold tracking-tight mb-3">
+                National Philately Deposit Account & Modulo-11 Verifier
+              </h2>
+              <p className="text-xs sm:text-sm text-ivory/80 leading-relaxed mb-6">
+                Overcoming regional access bottlenecks and ensuring transparent nationwide fulfillment with India Post Modulo-11 checksum verification, fair modular allotment for limited stamp releases, and automatic standing orders.
+              </p>
 
-      {/* 6. MARKETPLACE PREVIEW */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-xs border-t border-ivory/15 pt-5 mb-6">
+                <div>
+                  <span className="text-gold-400 font-bold block text-sm">Modulo-11 Checksum</span>
+                  <span className="text-ivory/60 text-[11px]">Instant Fake Detection</span>
+                </div>
+                <div>
+                  <span className="text-gold-400 font-bold block text-sm">Modular Allotment</span>
+                  <span className="text-ivory/60 text-[11px]">Fair Limited Drops</span>
+                </div>
+                <div>
+                  <span className="text-gold-400 font-bold block text-sm">National PDA Card</span>
+                  <span className="text-ivory/60 text-[11px]">Auto Dispatch FDCs & Mint</span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  to="/pda"
+                  variant="primary"
+                  size="md"
+                  icon={ArrowRight}
+                  iconPosition="right"
+                  className="bg-gold hover:bg-gold-500 text-navy-950 font-bold border-gold-400"
+                >
+                  Access National PDA Portal
+                </Button>
+                <Link
+                  to="/pda"
+                  className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-ivory/80 hover:text-gold transition-colors"
+                >
+                  Verify Stamp Provenance →
+                </Link>
+              </div>
+            </div>
+
+            <div className="w-full lg:w-auto shrink-0 bg-navy-950/80 border border-gold/30 p-6 max-w-sm">
+              <div className="flex items-center gap-3 mb-4 border-b border-ivory/10 pb-3">
+                <div className="w-9 h-9 bg-burgundy flex items-center justify-center border border-gold/40">
+                  <Landmark className="w-5 h-5 text-gold" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-mono text-gold-400 uppercase tracking-widest">Active National PDA</div>
+                  <div className="font-mono text-xs text-ivory font-bold">PDA-MH-0018492-3</div>
+                </div>
+              </div>
+              <div className="text-xs space-y-2 text-ivory/70">
+                <div className="flex justify-between">
+                  <span>Circle:</span>
+                  <span className="text-ivory font-mono">Maharashtra (Mumbai GPO)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Check Algorithm:</span>
+                  <span className="text-emerald-400 font-mono">Verhoeff D₅ Valid</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Standing Order:</span>
+                  <span className="text-ivory font-mono">Mint / FDC / Miniature</span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-ivory/10">
+                  <span>Archival Grade:</span>
+                  <span className="text-gold-300 font-mono">Dak Bhavan Certified</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-ivory-100 border border-beige p-6 sm:p-10 lg:p-12">
           
@@ -468,7 +553,7 @@ export default function HomePage() {
             </Button>
           </div>
 
-          {/* 4 Marketplace Cards */}
+          
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {MARKETPLACE_PREVIEW.map((item) => (
               <div
@@ -522,7 +607,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Marketplace Guarantee Footer */}
+          
           <div className="mt-8 pt-6 border-t border-beige flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-navy/70">
             <div className="flex items-center gap-2">
               <Lock className="w-4 h-4 text-gold-800 shrink-0" />
@@ -537,7 +622,7 @@ export default function HomePage() {
       </section>
 
 
-      {/* 7. COMMUNITY INTRODUCTION SECTION */}
+      
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
           badge="FELLOWSHIP & COGNITIVE HERITAGE"
@@ -546,7 +631,7 @@ export default function HomePage() {
           align="center"
         />
 
-        {/* 4 Pillars Grid */}
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {COMMUNITY_PILLARS.map((pillar) => (
             <div
@@ -581,7 +666,7 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Testimonials from Senior Indian Philatelists */}
+        
         <div className="bg-white border border-beige p-8 sm:p-10">
           <div className="text-center max-w-xl mx-auto mb-8">
             <span className="text-[10px] font-mono uppercase tracking-widest text-gold-900 font-semibold block mb-1">
@@ -610,11 +695,11 @@ export default function HomePage() {
       </section>
 
 
-      {/* 8. CALL TO ACTION: MEMBERSHIP PETITION */}
+      
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-burgundy text-ivory border border-burgundy-900 p-8 sm:p-12 lg:p-16 relative overflow-hidden text-center shadow-lg">
           
-          {/* Decorative Seal Background */}
+          
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full border border-ivory/10 pointer-events-none flex items-center justify-center">
             <Stamp className="w-72 h-72 text-ivory/5" />
           </div>

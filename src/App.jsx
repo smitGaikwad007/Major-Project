@@ -6,6 +6,7 @@ import StampsPage from './pages/StampsPage';
 import MarketplacePage from './pages/MarketplacePage';
 import CommunityPage from './pages/CommunityPage';
 import CollectionPage from './pages/CollectionPage';
+import PdaPage from './pages/PdaPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="marketplace" element={<MarketplacePage />} />
           <Route path="community" element={<CommunityPage />} />
           <Route path="collection" element={<CollectionPage />} />
+          <Route path="pda" element={<PdaPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

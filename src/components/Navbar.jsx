@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Menu, X, Stamp, ShieldCheck, User, Compass } from 'lucide-react';
+import { Menu, X, Stamp, ShieldCheck, Landmark } from 'lucide-react';
 import Button from './Button';
 
 export default function Navbar() {
@@ -12,12 +12,12 @@ export default function Navbar() {
     { name: 'Postal Archive', path: '/stamps' },
     { name: 'Marketplace', path: '/marketplace' },
     { name: 'Collector Circles', path: '/community' },
+    { name: 'National PDA', path: '/pda' },
     { name: 'My Vault', path: '/collection' },
   ];
 
   return (
     <header className="sticky top-0 z-50 bg-ivory/95 backdrop-blur-md border-b border-beige">
-      {/* Top Philatelic Notice Bar */}
       <div className="bg-navy-950 text-ivory/80 text-[11px] py-1.5 px-4 border-b border-navy-800">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -32,9 +32,14 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-4 text-[11px]">
+            <Link to="/pda" className="hover:text-gold transition-colors flex items-center gap-1">
+              <Landmark className="w-3 h-3 text-gold" />
+              <span>National PDA Portal</span>
+            </Link>
+            <span className="text-ivory/30">|</span>
             <Link to="/community" className="hover:text-gold transition-colors flex items-center gap-1">
               <ShieldCheck className="w-3 h-3 text-gold" />
-              <span>PCI Verified Standards</span>
+              <span>PCI Verified</span>
             </Link>
             <span className="text-ivory/30">|</span>
             <span className="font-mono text-gold-400">Est. 1897</span>
@@ -42,13 +47,9 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Main Navigation Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          
-          {/* Logo & Society Crest */}
           <Link to="/" className="flex items-center gap-3.5 group">
-            {/* Stamp Perforated Icon Crest */}
             <div className="w-11 h-11 bg-burgundy text-ivory flex items-center justify-center border-2 border-beige-dark shadow-sm relative transition-transform duration-300 group-hover:scale-105">
               <div className="absolute inset-0.5 border border-dashed border-gold/60"></div>
               <Stamp className="w-6 h-6 text-gold" />
@@ -64,14 +65,13 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
             {navLinks.map((link) => (
               <NavLink
                 key={link.path}
                 to={link.path}
                 className={({ isActive }) =>
-                  `px-3.5 py-2 text-sm font-medium transition-colors tracking-wide relative ${
+                  `px-3 py-2 text-sm font-medium transition-colors tracking-wide relative ${
                     isActive
                       ? 'text-burgundy font-semibold'
                       : 'text-navy-800 hover:text-burgundy'
@@ -82,7 +82,7 @@ export default function Navbar() {
                   <>
                     <span>{link.name}</span>
                     {isActive && (
-                      <span className="absolute bottom-0 left-3.5 right-3.5 h-[2px] bg-burgundy"></span>
+                      <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-burgundy"></span>
                     )}
                   </>
                 )}
@@ -90,7 +90,6 @@ export default function Navbar() {
             ))}
           </nav>
 
-          {/* Right Action Buttons */}
           <div className="hidden md:flex items-center gap-3">
             <Link
               to="/login"
@@ -108,7 +107,6 @@ export default function Navbar() {
             </Button>
           </div>
 
-          {/* Mobile Hamburger Menu Button */}
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -126,7 +124,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Dropdown Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-ivory border-b border-beige px-4 pt-3 pb-6 space-y-3 shadow-lg">
           <nav className="flex flex-col space-y-1">

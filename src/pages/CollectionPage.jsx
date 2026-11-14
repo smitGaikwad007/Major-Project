@@ -1,6 +1,6 @@
 import React from 'react';
 import SectionHeading from '../components/SectionHeading';
-import { Archive, Plus, FolderOpen, Award, ArrowLeft, Stamp, Shield } from 'lucide-react';
+import { Archive, Plus, FolderOpen, Award, ArrowLeft, Stamp, Shield, Landmark, ShieldCheck, ArrowRight } from 'lucide-react';
 import Button from '../components/Button';
 import { Link } from 'react-router-dom';
 
@@ -14,7 +14,6 @@ export default function CollectionPage() {
 
   return (
     <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-      {/* Breadcrumb */}
       <div className="mb-6 flex items-center gap-2 text-xs text-navy/60">
         <Link to="/" className="hover:text-burgundy flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
@@ -35,16 +34,15 @@ export default function CollectionPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" icon={FolderOpen} iconPosition="left">
-            Export Catalog
+          <Button to="/pda" variant="outline" size="sm" icon={Landmark} iconPosition="left">
+            PDA Standing Orders
           </Button>
-          <Button variant="primary" size="sm" icon={Plus} iconPosition="left">
-            Catalog Specimen
+          <Button to="/pda" variant="primary" size="sm" icon={ShieldCheck} iconPosition="left">
+            Verify Stamp Serial
           </Button>
         </div>
       </div>
 
-      {/* Summary Stats Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
         <div className="bg-white border border-beige p-4">
           <span className="text-[11px] uppercase tracking-wider text-navy/50 font-mono block">Vault Specimens</span>
@@ -68,7 +66,31 @@ export default function CollectionPage() {
         </div>
       </div>
 
-      {/* Album binders */}
+      <div className="mb-10 bg-ivory-100 border border-beige p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-navy text-gold flex items-center justify-center border border-gold/40 shrink-0">
+            <Landmark className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-widest text-gold-900 font-semibold">
+              NATIONAL DEPOSIT ACCOUNT LINKED
+            </div>
+            <h4 className="font-serif text-lg font-bold text-navy">Account: PDA-MH-0018492-3</h4>
+            <p className="text-xs text-navy/60">
+              Auto-fulfillment enabled for Commemorative Mint Stamps, FDCs, and Miniature Sheets with ₹8,450 balance.
+            </p>
+          </div>
+        </div>
+
+        <Link
+          to="/pda"
+          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider bg-burgundy text-ivory hover:bg-burgundy-900 transition-colors"
+        >
+          <span>Manage PDA & Allocations</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+
       <h3 className="font-serif text-xl font-bold text-navy mb-4">Curated Albums & Binders</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {albums.map((album, idx) => (
