@@ -58,6 +58,16 @@ async function runTests() {
     }
     console.log(`PASS: DELETE /api/stamps/:id deleted stamp ${createdStampId}`);
 
+    const badStampRes = await fetch(`${baseUrl}/api/stamps`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: '' }),
+    });
+    if (badStampRes.status !== 400) {
+      throw new Error('Validation for missing stamp fields failed');
+    }
+    console.log('PASS: POST /api/stamps rejects missing mandatory fields with 400');
+
     const collectionRes = await fetch(`${baseUrl}/api/collection`);
     const collectionJson = await collectionRes.json();
     if (!collectionJson.success || !Array.isArray(collectionJson.data)) {
@@ -89,6 +99,20 @@ async function runTests() {
       throw new Error('DELETE /api/collection/:id failed');
     }
     console.log(`PASS: DELETE /api/collection/:id removed item ${createdColId}`);
+
+    const badColRes = await fetch(`${baseUrl}/api/collection`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        stampId: 'non-existent-id',
+        quantity: -5,
+        condition: 'Fine',
+      }),
+    });
+    if (badColRes.status !== 400) {
+      throw new Error('Validation for negative quantity in collection item failed');
+    }
+    console.log('PASS: POST /api/collection rejects negative quantities with 400');
 
     const pdaAccountsRes = await fetch(`${baseUrl}/api/pda/accounts`);
     const pdaAccountsJson = await pdaAccountsRes.json();
@@ -144,6 +168,19 @@ async function runTests() {
     }
     console.log('PASS: POST /api/verification/check-stamp validated Modulo-11 checksum');
 
+    const fakeStampRes = await fetch(`${baseUrl}/api/verification/check-stamp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        serial: '123456789',
+      }),
+    });
+    const fakeStampJson = await fakeStampRes.json();
+    if (!fakeStampJson.success || fakeStampJson.isValid !== false) {
+      throw new Error('Tampered serial was not correctly rejected');
+    }
+    console.log('PASS: POST /api/verification/check-stamp caught counterfeit serial 123456789');
+
     const fairDropRes = await fetch(`${baseUrl}/api/verification/fair-drop`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -166,7 +203,7 @@ async function runTests() {
     }
     console.log(`PASS: GET /api/verification/allocations retrieved ${allocationsJson.count} persistent records`);
 
-    console.log('\nAll tests passed successfully!');
+    console.log('\nAll full-stack backend and database tests passed successfully!');
   } finally {
     server.close();
     await prisma.$disconnect();
