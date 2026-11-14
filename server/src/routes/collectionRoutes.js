@@ -1,71 +1,104 @@
 const express = require('express');
 const router = express.Router();
-const { collection, stamps } = require('../data/mockData');
+const prisma = require('../db/config');
 
-// GET /api/collection - Retrieve all items in the user's collection
-router.get('/', (req, res) => {
-  res.status(200).json({
-    success: true,
-    count: collection.length,
-    data: collection,
-  });
+router.get('/', async (req, res, next) => {
+  try {
+    const collection = await prisma.collectionItem.findMany({
+      include: {
+        stamp: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      count: collection.length,
+      data: collection,
+    });
+  } catch (error) {
+    return next(error);
+  }
 });
 
-// POST /api/collection - Add a stamp item to the collection
-router.post('/', (req, res) => {
-  const { stampId, quantity, condition } = req.body;
+router.post('/', async (req, res, next) => {
+  try {
+    const { stampId, quantity, condition } = req.body;
 
-  // Validate required fields
-  if (!stampId || quantity === undefined || !condition) {
-    return res.status(400).json({
-      success: false,
-      message: 'Please provide all required fields: stampId, quantity, and condition.',
+    if (!stampId || quantity === undefined || !condition) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide all required fields: stampId, quantity, and condition.',
+      });
+    }
+
+    const parsedQuantity = parseInt(quantity, 10);
+    if (isNaN(parsedQuantity) || parsedQuantity < 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Quantity must be a positive integer.',
+      });
+    }
+
+    const stamp = await prisma.stamp.findUnique({
+      where: { id: String(stampId) },
     });
-  }
 
-  // Verify that the referenced stamp exists in the catalog
-  const stampExists = stamps.some((s) => s.id === String(stampId));
-  if (!stampExists) {
-    return res.status(404).json({
-      success: false,
-      message: `Referenced stamp with ID '${stampId}' does not exist in the stamps catalogue.`,
+    if (!stamp) {
+      return res.status(404).json({
+        success: false,
+        message: `Referenced stamp with ID '${stampId}' does not exist in the stamps catalogue.`,
+      });
+    }
+
+    const newItem = await prisma.collectionItem.create({
+      data: {
+        stampId: String(stampId),
+        quantity: parsedQuantity,
+        condition: String(condition).trim(),
+      },
+      include: {
+        stamp: true,
+      },
     });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Item added to collection successfully.',
+      data: newItem,
+    });
+  } catch (error) {
+    return next(error);
   }
-
-  const newItem = {
-    id: `col_${Date.now()}`,
-    stampId: String(stampId),
-    quantity: Number(quantity) || 1,
-    condition: String(condition).trim(),
-  };
-
-  collection.push(newItem);
-
-  res.status(201).json({
-    success: true,
-    message: 'Item added to collection successfully.',
-    data: newItem,
-  });
 });
 
-// DELETE /api/collection/:id - Remove an item from the collection
-router.delete('/:id', (req, res) => {
-  const index = collection.findIndex((item) => item.id === req.params.id);
-
-  if (index === -1) {
-    return res.status(404).json({
-      success: false,
-      message: `Collection item with ID '${req.params.id}' not found.`,
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const existingItem = await prisma.collectionItem.findUnique({
+      where: { id: req.params.id },
     });
+
+    if (!existingItem) {
+      return res.status(404).json({
+        success: false,
+        message: `Collection item with ID '${req.params.id}' not found.`,
+      });
+    }
+
+    const removedItem = await prisma.collectionItem.delete({
+      where: { id: req.params.id },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Item removed from collection successfully.',
+      data: removedItem,
+    });
+  } catch (error) {
+    return next(error);
   }
-
-  const [removedItem] = collection.splice(index, 1);
-
-  res.status(200).json({
-    success: true,
-    message: 'Item removed from collection successfully.',
-    data: removedItem,
-  });
 });
 
 module.exports = router;
