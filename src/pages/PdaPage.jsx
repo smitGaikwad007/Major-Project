@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import SectionHeading from '../components/SectionHeading';
 import Button from '../components/Button';
-import { pdaApi } from '../services/api';
+import { pdaApi, verificationApi, stampApi } from '../services/api';
 import {
   calculateChecksum,
   verifyChecksum,
@@ -22,8 +22,11 @@ import {
   AlertCircle,
   X,
   CreditCard,
-  User,
-  History
+  History,
+  Check,
+  Sparkles,
+  Layers,
+  Stamp
 } from 'lucide-react';
 
 export default function PdaPage() {
@@ -45,10 +48,21 @@ export default function PdaPage() {
 
   const [verifyInput, setVerifyInput] = useState('123456785');
   const [testDigits, setTestDigits] = useState('12345678');
+  const [serverVerification, setServerVerification] = useState(null);
+  const [verifyingServer, setVerifyingServer] = useState(false);
+  const [verifyError, setVerifyError] = useState(null);
 
   const [totalApplicants, setTotalApplicants] = useState(20);
   const [totalStamps, setTotalStamps] = useState(5);
+  const [seedValue, setSeedValue] = useState(9);
+  const [selectedStampId, setSelectedStampId] = useState('');
+  const [stamps, setStamps] = useState([]);
   const [winners, setWinners] = useState([]);
+  const [runningAllotment, setRunningAllotment] = useState(false);
+  const [allotmentSuccess, setAllotmentSuccess] = useState(null);
+  const [allotmentError, setAllotmentError] = useState(null);
+  const [allocations, setAllocations] = useState([]);
+  const [loadingAllocations, setLoadingAllocations] = useState(false);
 
   const loadAccounts = async () => {
     try {
@@ -68,8 +82,35 @@ export default function PdaPage() {
     }
   };
 
+  const loadAllocations = async () => {
+    try {
+      setLoadingAllocations(true);
+      const res = await verificationApi.getAllocations();
+      setAllocations(res.data || []);
+    } catch (err) {
+      setAllocations([]);
+    } finally {
+      setLoadingAllocations(false);
+    }
+  };
+
+  const loadStamps = async () => {
+    try {
+      const res = await stampApi.getAll();
+      const list = res.data || [];
+      setStamps(list);
+      if (list.length > 0) {
+        setSelectedStampId(list[0].id);
+      }
+    } catch (err) {
+      setStamps([]);
+    }
+  };
+
   useEffect(() => {
     loadAccounts();
+    loadAllocations();
+    loadStamps();
   }, []);
 
   const handleCreateAccount = async (e) => {
@@ -106,13 +147,56 @@ export default function PdaPage() {
     }
   };
 
-  const isVerified = verifyChecksum(verifyInput);
-  const stepsData = getChecksumSteps(testDigits);
+  const handleVerifyServer = async (serialToVerify) => {
+    const target = serialToVerify || verifyInput;
+    if (!target) {
+      setVerifyError('Please enter a serial number to verify.');
+      return;
+    }
 
-  const handleRunAllotment = () => {
-    const list = fairAllotment(totalApplicants, totalStamps, 9);
-    setWinners(list);
+    try {
+      setVerifyingServer(true);
+      setVerifyError(null);
+      const res = await verificationApi.checkStamp(target);
+      setServerVerification(res);
+    } catch (err) {
+      setVerifyError(err.message || 'Failed to connect to verification server.');
+    } finally {
+      setVerifyingServer(false);
+    }
   };
+
+  const handleRunAllotment = async () => {
+    if (totalStamps > totalApplicants) {
+      setAllotmentError('Available stamps cannot exceed total applicants.');
+      return;
+    }
+
+    try {
+      setRunningAllotment(true);
+      setAllotmentError(null);
+      const payload = {
+        applicants: Number(totalApplicants) || 1,
+        stamps: Number(totalStamps) || 1,
+        seed: Number(seedValue) || 7,
+        stampId: selectedStampId || null,
+        pdaApplicationId: selectedAccount ? selectedAccount.id : null,
+      };
+
+      const res = await verificationApi.fairDrop(payload);
+      setWinners(res.winners || []);
+      setAllotmentSuccess(`Fair allotment completed: ${res.winners.length} winners selected and saved to PostgreSQL!`);
+      await loadAllocations();
+      setTimeout(() => setAllotmentSuccess(null), 5000);
+    } catch (err) {
+      setAllotmentError(err.message || 'Failed to execute fair allotment request.');
+    } finally {
+      setRunningAllotment(false);
+    }
+  };
+
+  const isVerifiedLocal = verifyChecksum(verifyInput);
+  const stepsData = getChecksumSteps(testDigits);
 
   return (
     <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
@@ -421,57 +505,101 @@ export default function PdaPage() {
               <label className="block text-xs font-semibold text-navy mb-1 uppercase tracking-wider">
                 Enter 9-Digit Serial Number
               </label>
-              <input
-                type="text"
-                value={verifyInput}
-                onChange={(e) => setVerifyInput(e.target.value.replace(/\D/g, '').slice(0, 9))}
-                className="w-full px-3 py-2 text-base font-mono bg-ivory-50 border border-beige focus:outline-none focus:border-burgundy"
-                placeholder="e.g. 123456785"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={verifyInput}
+                  onChange={(e) => {
+                    setVerifyInput(e.target.value.replace(/\D/g, '').slice(0, 9));
+                    setServerVerification(null);
+                  }}
+                  className="w-full px-3 py-2 text-base font-mono bg-ivory-50 border border-beige focus:outline-none focus:border-burgundy"
+                  placeholder="e.g. 123456785"
+                />
+                <Button
+                  onClick={() => handleVerifyServer(verifyInput)}
+                  variant="primary"
+                  size="sm"
+                  disabled={verifyingServer || verifyInput.length < 9}
+                  className="shrink-0 text-xs px-3"
+                >
+                  {verifyingServer ? 'Verifying...' : 'API Verify'}
+                </Button>
+              </div>
               <span className="text-[10px] text-navy/50 mt-1 block">
                 First 8 digits are the base serial, 9th digit is the Modulo-11 check digit.
               </span>
             </div>
 
-            <div className={`p-4 border text-xs flex items-center gap-3 ${
-              isVerified ? 'bg-emerald-50 border-emerald-300 text-emerald-950' : 'bg-rose-50 border-rose-300 text-rose-950'
+            {verifyError && (
+              <div className="mb-4 p-3 bg-rose-50 border border-rose-300 text-rose-950 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-700 shrink-0" />
+                <span>{verifyError}</span>
+              </div>
+            )}
+
+            <div className={`p-4 border text-xs flex items-center gap-3 mb-4 ${
+              isVerifiedLocal ? 'bg-emerald-50 border-emerald-300 text-emerald-950' : 'bg-rose-50 border-rose-300 text-rose-950'
             }`}>
-              {isVerified ? (
+              {isVerifiedLocal ? (
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
               ) : (
                 <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
               )}
               <div>
                 <span className="font-bold text-sm block">
-                  {isVerified ? 'Authentic Number (Checksum Valid)' : 'Invalid or Fake Number'}
+                  {isVerifiedLocal ? 'Authentic Number (Local Checksum Valid)' : 'Invalid or Fake Number'}
                 </span>
                 <span className="text-[11px] opacity-80">
-                  {isVerified
+                  {isVerifiedLocal
                     ? 'The 9th digit correctly satisfies the India Post Modulo-11 congruence equation.'
                     : 'The checksum digit does not match. Possible typo or counterfeit stamp.'}
                 </span>
               </div>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-beige text-xs text-navy/70 space-y-2">
+            {serverVerification && (
+              <div className="p-4 bg-navy-950 text-ivory border border-gold/40 text-xs space-y-1.5 font-mono mb-4">
+                <div className="text-gold-400 font-bold text-xs flex items-center justify-between">
+                  <span>POSTGRESQL API ENGINE RESULT</span>
+                  <span className={serverVerification.isValid ? 'text-emerald-400' : 'text-rose-400'}>
+                    {serverVerification.isValid ? 'VALID' : 'INVALID'}
+                  </span>
+                </div>
+                <div>Formula: {serverVerification.formula}</div>
+                <div>Checked Serial: {serverVerification.serial}</div>
+                <div>Engine Verification: {serverVerification.isValid ? 'Genuine Stamp Seal' : 'Counterfeit / Malformed'}</div>
+              </div>
+            )}
+
+            <div className="mt-4 pt-4 border-t border-beige text-xs text-navy/70 space-y-2">
               <span className="font-bold text-navy block">Quick Test Cases:</span>
               <button
                 type="button"
-                onClick={() => setVerifyInput('123456785')}
+                onClick={() => {
+                  setVerifyInput('123456785');
+                  handleVerifyServer('123456785');
+                }}
                 className="block text-left text-burgundy hover:underline font-mono"
               >
                 • 123456785 (Valid Original Specimen)
               </button>
               <button
                 type="button"
-                onClick={() => setVerifyInput('123456789')}
+                onClick={() => {
+                  setVerifyInput('123456789');
+                  handleVerifyServer('123456789');
+                }}
                 className="block text-left text-burgundy hover:underline font-mono"
               >
                 • 123456789 (Tampered Last Digit → Fails)
               </button>
               <button
                 type="button"
-                onClick={() => setVerifyInput('213456785')}
+                onClick={() => {
+                  setVerifyInput('213456785');
+                  handleVerifyServer('213456785');
+                }}
                 className="block text-left text-burgundy hover:underline font-mono"
               >
                 • 213456785 (Transposed First Two Digits → Fails)
@@ -531,70 +659,216 @@ export default function PdaPage() {
       )}
 
       {activeTab === 'allotment' && (
-        <div className="bg-white border border-beige p-6 shadow-sm">
-          <h3 className="font-serif text-xl font-bold text-navy mb-1">
-            Fair Stamp Allotment Using Modular Arithmetic
-          </h3>
-          <p className="text-xs text-navy/60 mb-6">
-            When only a few limited-edition stamps are released, this algorithm uses modular arithmetic to pick winners fairly without human bias.
-          </p>
+        <div className="space-y-8">
+          <div className="bg-white border border-beige p-6 shadow-sm">
+            <h3 className="font-serif text-xl font-bold text-navy mb-1">
+              Fair Stamp Allotment Using Modular Arithmetic
+            </h3>
+            <p className="text-xs text-navy/60 mb-6">
+              When limited-edition stamps are released, this algorithm executes modular arithmetic (Formula: (Seed + step × 17) mod N) and persists records into PostgreSQL without human bias.
+            </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <div>
-              <label className="block text-xs font-semibold text-navy mb-1 uppercase tracking-wider">
-                Total Subscribed Collectors (N)
-              </label>
-              <input
-                type="number"
-                min="2"
-                max="100"
-                value={totalApplicants}
-                onChange={(e) => setTotalApplicants(Number(e.target.value))}
-                className="w-full px-3 py-2 text-sm bg-ivory-50 border border-beige font-mono"
-              />
-            </div>
+            {allotmentSuccess && (
+              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span className="font-medium">{allotmentSuccess}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAllotmentSuccess(null)}
+                  className="text-emerald-800 hover:text-emerald-950"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
 
-            <div>
-              <label className="block text-xs font-semibold text-navy mb-1 uppercase tracking-wider">
-                Limited Stamps Available (K)
-              </label>
-              <input
-                type="number"
-                min="1"
-                max={totalApplicants}
-                value={totalStamps}
-                onChange={(e) => setTotalStamps(Number(e.target.value))}
-                className="w-full px-3 py-2 text-sm bg-ivory-50 border border-beige font-mono"
-              />
-            </div>
-          </div>
+            {allotmentError && (
+              <div className="mb-6 p-4 bg-rose-50 border border-rose-300 text-rose-950 text-xs flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-700 shrink-0" />
+                  <span className="font-medium">{allotmentError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAllotmentError(null)}
+                  className="text-rose-800 hover:text-rose-950"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
 
-          <div className="mb-6">
-            <Button onClick={handleRunAllotment} variant="primary" size="md">
-              Run Fair Modular Allotment
-            </Button>
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div>
+                <label className="block text-xs font-semibold text-navy mb-1 uppercase tracking-wider">
+                  Total Subscribed Collectors (N)
+                </label>
+                <input
+                  type="number"
+                  min="2"
+                  max="1000"
+                  value={totalApplicants}
+                  onChange={(e) => setTotalApplicants(Math.max(2, Number(e.target.value)))}
+                  className="w-full px-3 py-2 text-sm bg-ivory-50 border border-beige font-mono"
+                />
+              </div>
 
-          {winners.length > 0 && (
-            <div>
-              <h4 className="font-serif text-base font-bold text-navy mb-3 flex items-center gap-2">
-                <Award className="w-5 h-5 text-gold-900" />
-                <span>Selected Winners (Formula: (Seed + step × 17) mod N)</span>
-              </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                {winners.map((winnerId, index) => (
-                  <div key={index} className="p-3 bg-emerald-50 border border-emerald-300 text-center">
-                    <span className="text-[10px] font-mono uppercase text-emerald-800 font-bold block">
-                      Stamp #{index + 1}
-                    </span>
-                    <span className="font-serif text-lg font-bold text-navy">
-                      Collector #{winnerId}
-                    </span>
-                  </div>
-                ))}
+              <div>
+                <label className="block text-xs font-semibold text-navy mb-1 uppercase tracking-wider">
+                  Limited Stamps Available (K)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max={totalApplicants}
+                  value={totalStamps}
+                  onChange={(e) => setTotalStamps(Math.max(1, Number(e.target.value)))}
+                  className="w-full px-3 py-2 text-sm bg-ivory-50 border border-beige font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-navy mb-1 uppercase tracking-wider">
+                  Randomization Seed
+                </label>
+                <input
+                  type="number"
+                  value={seedValue}
+                  onChange={(e) => setSeedValue(Number(e.target.value))}
+                  className="w-full px-3 py-2 text-sm bg-ivory-50 border border-beige font-mono"
+                />
               </div>
             </div>
-          )}
+
+            {stamps.length > 0 && (
+              <div className="mb-6">
+                <label className="block text-xs font-semibold text-navy mb-1 uppercase tracking-wider">
+                  Allocate for Catalogue Specimen
+                </label>
+                <select
+                  value={selectedStampId}
+                  onChange={(e) => setSelectedStampId(e.target.value)}
+                  className="w-full px-3 py-2 text-xs bg-ivory-50 border border-beige focus:outline-none focus:border-burgundy"
+                >
+                  {stamps.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.year}) - {s.category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="mb-6">
+              <Button
+                onClick={handleRunAllotment}
+                variant="primary"
+                size="md"
+                disabled={runningAllotment}
+              >
+                {runningAllotment ? 'Executing Modular Allotment...' : 'Run & Persist Fair Modular Allotment'}
+              </Button>
+            </div>
+
+            {winners.length > 0 && (
+              <div className="border-t border-beige pt-6">
+                <h4 className="font-serif text-base font-bold text-navy mb-3 flex items-center gap-2">
+                  <Award className="w-5 h-5 text-gold-900" />
+                  <span>Selected Winners (Formula: (Seed + step × 17) mod N)</span>
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  {winners.map((winnerId, index) => (
+                    <div key={index} className="p-3 bg-emerald-50 border border-emerald-300 text-center">
+                      <span className="text-[10px] font-mono uppercase text-emerald-800 font-bold block">
+                        Stamp #{index + 1}
+                      </span>
+                      <span className="font-serif text-lg font-bold text-navy">
+                        Collector #{winnerId}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white border border-beige p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-beige">
+              <div>
+                <h4 className="font-serif text-lg font-bold text-navy flex items-center gap-2">
+                  <History className="w-4 h-4 text-gold-900" />
+                  <span>Historical Stamp Allotment Records</span>
+                </h4>
+                <p className="text-xs text-navy/60">
+                  Audit trail of all previous allotments permanently stored in PostgreSQL.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={loadAllocations}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-navy bg-ivory-100 hover:bg-ivory-200 border border-beige px-2.5 py-1 transition-colors"
+              >
+                <RefreshCw className={`w-3 h-3 ${loadingAllocations ? 'animate-spin text-burgundy' : ''}`} />
+                <span>Sync</span>
+              </button>
+            </div>
+
+            {loadingAllocations && (
+              <div className="py-8 text-center text-xs text-navy/60">
+                <RefreshCw className="w-5 h-5 animate-spin mx-auto text-burgundy mb-2" />
+                <span>Querying PostgreSQL StampAllocation ledger...</span>
+              </div>
+            )}
+
+            {!loadingAllocations && allocations.length === 0 && (
+              <div className="p-6 bg-ivory-50 border border-dashed border-beige text-center text-xs text-navy/60">
+                No previous stamp allocations recorded yet. Run your first fair drop above.
+              </div>
+            )}
+
+            {!loadingAllocations && allocations.length > 0 && (
+              <div className="overflow-x-auto border border-beige">
+                <table className="min-w-full text-xs text-left">
+                  <thead className="bg-ivory-200 text-navy uppercase font-mono text-[10px]">
+                    <tr>
+                      <th className="p-2.5 border-b border-beige">Applicant ID</th>
+                      <th className="p-2.5 border-b border-beige">Specimen</th>
+                      <th className="p-2.5 border-b border-beige">Qty</th>
+                      <th className="p-2.5 border-b border-beige">Status</th>
+                      <th className="p-2.5 border-b border-beige">Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-beige font-mono">
+                    {allocations.slice(0, 10).map((alloc) => (
+                      <tr key={alloc.id} className="hover:bg-ivory-50">
+                        <td className="p-2.5 font-bold text-navy">Collector #{alloc.applicantId}</td>
+                        <td className="p-2.5 text-navy-800 font-sans">
+                          {alloc.stamp?.name || (alloc.stampId ? `Stamp ${alloc.stampId.slice(0, 8)}` : 'Limited Issue')}
+                        </td>
+                        <td className="p-2.5">{alloc.allocatedQuantity}</td>
+                        <td className="p-2.5">
+                          <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 text-[10px] font-semibold border border-emerald-300">
+                            {alloc.status}
+                          </span>
+                        </td>
+                        <td className="p-2.5 text-navy/60 text-[11px]">
+                          {new Date(alloc.createdAt).toLocaleString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
