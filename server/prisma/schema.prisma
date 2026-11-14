@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String            @id @default(uuid())
+  email           String            @unique
+  name            String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  collectionItems CollectionItem[]
+  pdaApplications PdaApplication[]
+}
+
+model Stamp {
+  id              String            @id @default(uuid())
+  name            String
+  year            Int
+  country         String
+  category        String
+  description     String
+  image           String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  collectionItems CollectionItem[]
+  allocations     StampAllocation[]
+}
+
+model CollectionItem {
+  id        String   @id @default(uuid())
+  userId    String?
+  stampId   String
+  quantity  Int      @default(1)
+  condition String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stamp     Stamp    @relation(fields: [stampId], references: [id], onDelete: Cascade)
+}
+
+model PdaApplication {
+  id              String            @id @default(uuid())
+  accountNumber   String            @unique
+  holderName      String
+  postalCircle    String
+  balance         Float             @default(0)
+  mintStamps      Boolean           @default(true)
+  firstDayCovers  Boolean           @default(true)
+  miniatureSheets Boolean           @default(false)
+  status          String            @default("ACTIVE")
+  userId          String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  allocations     StampAllocation[]
+}
+
+model StampAllocation {
+  id                String          @id @default(uuid())
+  pdaApplicationId  String?
+  stampId           String?
+  applicantId       Int
+  allocatedQuantity Int             @default(1)
+  status            String          @default("ALLOTTED")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  pdaApplication    PdaApplication? @relation(fields: [pdaApplicationId], references: [id], onDelete: Cascade)
+  stamp             Stamp?          @relation(fields: [stampId], references: [id], onDelete: SetNull)
+}
