@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const prisma = require('../db/config');
 
 const WEIGHTS = [8, 6, 4, 2, 3, 5, 9, 7];
 
@@ -24,73 +25,105 @@ function verifyChecksum(fullNumber) {
   return calculateChecksum(base) === givenCheck;
 }
 
-let pdaAccounts = [
-  {
-    accountNumber: 'PDA-MH-12345678-5',
-    holderName: 'Dr. Anandita Sen',
-    postalCircle: 'Maharashtra Circle (Mumbai GPO)',
-    balance: 8450,
+function formatPdaAccount(acc) {
+  return {
+    id: acc.id,
+    accountNumber: acc.accountNumber,
+    holderName: acc.holderName,
+    postalCircle: acc.postalCircle,
+    balance: acc.balance,
     standingOrders: {
-      mintStamps: true,
-      firstDayCovers: true,
-      miniatureSheets: true
-    }
-  },
-  {
-    accountNumber: 'PDA-WB-87654321-4',
-    holderName: 'Prof. Debabrata Roy',
-    postalCircle: 'West Bengal Circle (Kolkata GPO)',
-    balance: 14200,
-    standingOrders: {
-      mintStamps: true,
-      firstDayCovers: true,
-      miniatureSheets: false
-    }
-  }
-];
+      mintStamps: acc.mintStamps,
+      firstDayCovers: acc.firstDayCovers,
+      miniatureSheets: acc.miniatureSheets,
+    },
+    createdAt: acc.createdAt,
+  };
+}
 
-router.get('/accounts', (req, res) => {
-  res.status(200).json({
-    success: true,
-    totalAccounts: pdaAccounts.length,
-    data: pdaAccounts
-  });
+router.get('/accounts', async (req, res, next) => {
+  try {
+    let accounts = await prisma.pdaApplication.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (accounts.length === 0) {
+      await prisma.pdaApplication.createMany({
+        data: [
+          {
+            accountNumber: 'PDA-MH-12345678-5',
+            holderName: 'Dr. Anandita Sen',
+            postalCircle: 'Maharashtra Circle (Mumbai GPO)',
+            balance: 8450,
+            mintStamps: true,
+            firstDayCovers: true,
+            miniatureSheets: true,
+          },
+          {
+            accountNumber: 'PDA-WB-87654321-4',
+            holderName: 'Prof. Debabrata Roy',
+            postalCircle: 'West Bengal Circle (Kolkata GPO)',
+            balance: 14200,
+            mintStamps: true,
+            firstDayCovers: true,
+            miniatureSheets: false,
+          },
+        ],
+        skipDuplicates: true,
+      });
+
+      accounts = await prisma.pdaApplication.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      totalAccounts: accounts.length,
+      data: accounts.map(formatPdaAccount),
+    });
+  } catch (error) {
+    return next(error);
+  }
 });
 
-router.post('/open', (req, res) => {
-  const { holderName, postalCircle, initialDeposit, standingOrders } = req.body;
+router.post('/open', async (req, res, next) => {
+  try {
+    const { holderName, postalCircle, initialDeposit, standingOrders } = req.body;
 
-  if (!holderName) {
-    return res.status(400).json({
-      success: false,
-      message: 'Collector name is required.'
-    });
-  }
-
-  const baseSeq = String(Math.floor(10000000 + Math.random() * 89999999));
-  const check = calculateChecksum(baseSeq);
-  const circleCode = (postalCircle || 'MH').slice(0, 2).toUpperCase();
-  const accountNumber = `PDA-${circleCode}-${baseSeq}-${check}`;
-
-  const newAccount = {
-    accountNumber,
-    holderName: String(holderName).trim(),
-    postalCircle: postalCircle || 'Maharashtra Circle',
-    balance: Number(initialDeposit) || 1000,
-    standingOrders: standingOrders || {
-      mintStamps: true,
-      firstDayCovers: true,
-      miniatureSheets: false
+    if (!holderName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Collector name is required.',
+      });
     }
-  };
 
-  pdaAccounts.unshift(newAccount);
+    const baseSeq = String(Math.floor(10000000 + Math.random() * 89999999));
+    const check = calculateChecksum(baseSeq);
+    const circleCode = (postalCircle || 'MH').slice(0, 2).toUpperCase();
+    const accountNumber = `PDA-${circleCode}-${baseSeq}-${check}`;
+    const standing = standingOrders || {};
 
-  res.status(201).json({
-    success: true,
-    message: 'Deposit account created successfully with Modulo-11 checksum.',
-    data: newAccount
-  });
+    const newAccount = await prisma.pdaApplication.create({
+      data: {
+        accountNumber,
+        holderName: String(holderName).trim(),
+        postalCircle: postalCircle || 'Maharashtra Circle',
+        balance: Number(initialDeposit) || 1000,
+        mintStamps: standing.mintStamps !== undefined ? Boolean(standing.mintStamps) : true,
+        firstDayCovers: standing.firstDayCovers !== undefined ? Boolean(standing.firstDayCovers) : true,
+        miniatureSheets: standing.miniatureSheets !== undefined ? Boolean(standing.miniatureSheets) : false,
+      },
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Deposit account created successfully with Modulo-11 checksum.',
+      data: formatPdaAccount(newAccount),
+    });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 router.post('/verify', (req, res) => {
@@ -101,11 +134,11 @@ router.post('/verify', (req, res) => {
 
   const isValid = verifyChecksum(serialNumber);
 
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
     serialNumber,
     isValid,
-    algorithm: 'India Post Weighted Modulo-11'
+    algorithm: 'India Post Weighted Modulo-11',
   });
 });
 
