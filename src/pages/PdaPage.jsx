@@ -26,7 +26,8 @@ import {
   Check,
   Sparkles,
   Layers,
-  Stamp
+  Stamp,
+  Copy
 } from 'lucide-react';
 
 export default function PdaPage() {
@@ -63,6 +64,29 @@ export default function PdaPage() {
   const [allotmentError, setAllotmentError] = useState(null);
   const [allocations, setAllocations] = useState([]);
   const [loadingAllocations, setLoadingAllocations] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(null);
+
+  const handleCopy = async (textToCopy, key = 'account') => {
+    if (!textToCopy) return;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = textToCopy;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err);
+    }
+  };
 
   const loadAccounts = async () => {
     try {
@@ -436,11 +460,36 @@ export default function PdaPage() {
                   </span>
                 </div>
 
-                <div className="bg-navy-950 p-3 border border-gold/20 mb-4 font-mono text-center">
-                  <span className="text-[10px] text-ivory/50 block mb-0.5">Account Number (Checksum Protected)</span>
-                  <span className="text-base font-bold text-gold-400 tracking-wider">
-                    {selectedAccount ? selectedAccount.accountNumber : 'PDA-MH-12345678-5'}
-                  </span>
+                <div className="bg-navy-950 p-3 border border-gold/20 mb-4 font-mono flex items-center justify-between gap-3">
+                  <div className="text-left min-w-0">
+                    <span className="text-[10px] text-ivory/50 block mb-0.5">Account Number (Checksum Protected)</span>
+                    <span className="text-base font-bold text-gold-400 tracking-wider truncate block">
+                      {selectedAccount ? selectedAccount.accountNumber : 'PDA-MH-12345678-5'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(selectedAccount ? selectedAccount.accountNumber : 'PDA-MH-12345678-5', 'account')}
+                    className={`inline-flex items-center gap-1.5 text-xs font-sans font-medium px-2.5 py-1.5 transition-all shrink-0 border ${
+                      copiedKey === 'account'
+                        ? 'bg-emerald-900/80 border-emerald-500 text-emerald-300'
+                        : 'bg-navy-900 border-gold/30 text-gold-300 hover:bg-navy-800 hover:border-gold'
+                    }`}
+                    title="Copy account number to clipboard"
+                    aria-label="Copy account number"
+                  >
+                    {copiedKey === 'account' ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 <div className="flex justify-between items-center text-xs pt-2 border-t border-ivory/15">
@@ -650,8 +699,33 @@ export default function PdaPage() {
               <div>Total Sum = <strong>{stepsData.sum}</strong></div>
               <div>Sum mod 11 = <strong>{stepsData.remainder}</strong></div>
               <div>Check Digit = 11 - {stepsData.remainder} = <strong className="text-burgundy text-sm">{stepsData.check}</strong></div>
-              <div className="text-[11px] text-navy/60 pt-1 font-sans">
-                Full valid number: <strong>{testDigits}{stepsData.check}</strong>
+              <div className="text-[11px] text-navy/60 pt-1 font-sans flex items-center justify-between gap-2">
+                <span>
+                  Full valid number: <strong className="font-mono text-navy font-bold">{testDigits}{stepsData.check}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(`${testDigits}${stepsData.check}`, 'calc-serial')}
+                  className={`inline-flex items-center gap-1 text-[11px] font-sans px-2 py-0.5 transition-all border ${
+                    copiedKey === 'calc-serial'
+                      ? 'bg-emerald-50 border-emerald-400 text-emerald-800 font-semibold'
+                      : 'bg-white border-beige text-navy hover:border-gold hover:bg-ivory-50'
+                  }`}
+                  title="Copy full 9-digit valid number"
+                  aria-label="Copy full valid number"
+                >
+                  {copiedKey === 'calc-serial' ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-600" />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3 text-gold-900" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
