@@ -30,7 +30,8 @@ import {
   FileText,
   ChevronDown,
   Eye,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Compass
 } from 'lucide-react';
 import Button from '../components/Button';
 import { Link } from 'react-router-dom';
@@ -529,6 +530,18 @@ export default function CollectionPage() {
                 </div>
               )}
             </div>
+
+            <Button
+              to="/gap-analyzer"
+              variant="outline"
+              size="sm"
+              icon={Compass}
+              iconPosition="left"
+              className="text-xs font-semibold tracking-wider uppercase px-3 py-2"
+              title="Audit missing specimens and series completion"
+            >
+              Gap Analyzer
+            </Button>
 
             <Button
               onClick={() => setShowAddModal(true)}

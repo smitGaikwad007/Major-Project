@@ -15,6 +15,7 @@ export default function Navbar() {
     { name: 'Collector Circles', path: '/community' },
     { name: 'National PDA', path: '/pda' },
     { name: 'My Vault', path: '/collection' },
+    { name: 'Gap Analyzer', path: '/gap-analyzer' },
     { name: 'Dashboard', path: '/dashboard' },
   ];
 
@@ -67,13 +68,13 @@ export default function Navbar() {
             </div>
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
+          <nav className="hidden md:flex items-center space-x-0.5 lg:space-x-1.5 xl:space-x-2">
             {navLinks.map((link) => (
               <NavLink
                 key={link.path}
                 to={link.path}
                 className={({ isActive }) =>
-                  `px-3 py-2 text-sm font-medium transition-colors tracking-wide relative ${
+                  `px-2 lg:px-2.5 xl:px-3 py-2 text-xs lg:text-[13px] xl:text-sm font-medium transition-colors tracking-wide relative ${
                     isActive
                       ? 'text-burgundy font-semibold'
                       : 'text-navy-800 hover:text-burgundy'

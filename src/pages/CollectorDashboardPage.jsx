@@ -26,6 +26,7 @@ import {
   PieChart,
   BarChart3,
   ExternalLink,
+  Compass,
 } from 'lucide-react';
 
 const TARGET_STORAGE_KEY = 'philately_collector_target_goal';
@@ -228,6 +229,15 @@ export default function CollectorDashboardPage() {
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-burgundy' : 'text-gold-900'}`} />
               <span>Refresh Metrics</span>
             </button>
+
+            <Link
+              to="/gap-analyzer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold uppercase tracking-wider bg-white border border-beige text-navy hover:border-gold transition-colors shadow-sm"
+              title="Audit missing specimens and series gaps"
+            >
+              <Compass className="w-3.5 h-3.5 text-gold-900" />
+              <span>Gap Analyzer</span>
+            </Link>
 
             <Link
               to="/collection"
