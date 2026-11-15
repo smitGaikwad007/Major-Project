@@ -10,6 +10,7 @@ import PdaPage from './pages/PdaPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import WishlistPage from './pages/WishlistPage';
+import MarketplaceListingDetailPage from './pages/MarketplaceListingDetailPage';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route index element={<HomePage />} />
           <Route path="stamps" element={<StampsPage />} />
           <Route path="marketplace" element={<MarketplacePage />} />
+          <Route path="marketplace/listing/:id" element={<MarketplaceListingDetailPage />} />
           <Route path="community" element={<CommunityPage />} />
           <Route path="collection" element={<CollectionPage />} />
           <Route path="pda" element={<PdaPage />} />
