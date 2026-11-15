@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import SectionHeading from '../components/SectionHeading';
 import { MARKETPLACE_PREVIEW } from '../data/mockData';
-import { ShieldCheck, MapPin, Tag, ArrowLeft, Lock, Eye, X, CheckCircle2, Search, Filter, ArrowUpDown, RotateCcw } from 'lucide-react';
+import { ShieldCheck, MapPin, Tag, ArrowLeft, Lock, Eye, X, CheckCircle2, Search, Filter, ArrowUpDown, RotateCcw, AlertCircle } from 'lucide-react';
 import Button from '../components/Button';
 import { Link } from 'react-router-dom';
 
@@ -47,9 +47,22 @@ export default function MarketplacePage() {
   const hasActiveFilters =
     searchQuery.trim() !== '' ||
     selectedCondition !== 'all' ||
-    minPrice !== '' ||
-    maxPrice !== '' ||
+    minPrice.trim() !== '' ||
+    maxPrice.trim() !== '' ||
     sortBy !== 'default';
+
+  const parsedMin =
+    minPrice.trim() !== '' && !isNaN(Number(minPrice))
+      ? Math.max(0, Number(minPrice))
+      : null;
+
+  const parsedMax =
+    maxPrice.trim() !== '' && !isNaN(Number(maxPrice))
+      ? Math.max(0, Number(maxPrice))
+      : null;
+
+  const isInvalidPriceRange =
+    parsedMin !== null && parsedMax !== null && parsedMin > parsedMax;
 
   const filteredListings = MARKETPLACE_PREVIEW.filter((item) => {
     const q = searchQuery.toLowerCase().trim();
@@ -66,11 +79,12 @@ export default function MarketplacePage() {
       selectedCondition === 'all' ||
       (item.condition && item.condition.toLowerCase() === selectedCondition.toLowerCase());
 
-    const parsedMin = minPrice !== '' ? Number(minPrice) : null;
-    const matchesMin = parsedMin === null || isNaN(parsedMin) || item.price >= parsedMin;
+    if (isInvalidPriceRange) {
+      return false;
+    }
 
-    const parsedMax = maxPrice !== '' ? Number(maxPrice) : null;
-    const matchesMax = parsedMax === null || isNaN(parsedMax) || item.price <= parsedMax;
+    const matchesMin = parsedMin === null || item.price >= parsedMin;
+    const matchesMax = parsedMax === null || item.price <= parsedMax;
 
     return matchesSearch && matchesCondition && matchesMin && matchesMax;
   });
@@ -168,25 +182,81 @@ export default function MarketplacePage() {
               <Tag className="w-3.5 h-3.5 text-gold-900" /> Price (₹):
             </span>
             <div className="flex items-center gap-1.5">
+              <label htmlFor="min-price-input" className="sr-only">
+                Minimum Price
+              </label>
               <input
+                id="min-price-input"
                 type="number"
                 min="0"
                 step="5000"
                 placeholder="Min ₹"
                 value={minPrice}
                 onChange={(e) => setMinPrice(e.target.value)}
-                className="w-24 px-2.5 py-1.5 text-xs font-mono bg-ivory-100 border border-beige focus:outline-none focus:border-gold text-navy"
+                className={`w-24 sm:w-28 px-2.5 py-1.5 text-xs font-mono border focus:outline-none transition-colors ${
+                  isInvalidPriceRange
+                    ? 'border-rose-400 bg-rose-50/50 text-rose-950 focus:border-rose-600'
+                    : 'bg-ivory-100 border-beige text-navy focus:border-gold'
+                }`}
+                aria-invalid={isInvalidPriceRange}
+                aria-describedby={isInvalidPriceRange ? 'price-range-error' : undefined}
               />
               <span className="text-navy/40 font-mono">–</span>
+              <label htmlFor="max-price-input" className="sr-only">
+                Maximum Price
+              </label>
               <input
+                id="max-price-input"
                 type="number"
                 min="0"
                 step="5000"
                 placeholder="Max ₹"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
-                className="w-24 px-2.5 py-1.5 text-xs font-mono bg-ivory-100 border border-beige focus:outline-none focus:border-gold text-navy"
+                className={`w-24 sm:w-28 px-2.5 py-1.5 text-xs font-mono border focus:outline-none transition-colors ${
+                  isInvalidPriceRange
+                    ? 'border-rose-400 bg-rose-50/50 text-rose-950 focus:border-rose-600'
+                    : 'bg-ivory-100 border-beige text-navy focus:border-gold'
+                }`}
+                aria-invalid={isInvalidPriceRange}
+                aria-describedby={isInvalidPriceRange ? 'price-range-error' : undefined}
               />
+            </div>
+
+            <div className="hidden sm:flex items-center gap-1 text-[11px] ml-1">
+              <button
+                type="button"
+                onClick={() => { setMinPrice(''); setMaxPrice('40000'); }}
+                className={`px-2 py-0.5 border text-[11px] transition-colors ${
+                  minPrice === '' && maxPrice === '40000'
+                    ? 'bg-burgundy text-ivory border-burgundy font-semibold'
+                    : 'bg-ivory-100 text-navy/70 border-beige hover:border-gold'
+                }`}
+              >
+                &lt; ₹40k
+              </button>
+              <button
+                type="button"
+                onClick={() => { setMinPrice('40000'); setMaxPrice('60000'); }}
+                className={`px-2 py-0.5 border text-[11px] transition-colors ${
+                  minPrice === '40000' && maxPrice === '60000'
+                    ? 'bg-burgundy text-ivory border-burgundy font-semibold'
+                    : 'bg-ivory-100 text-navy/70 border-beige hover:border-gold'
+                }`}
+              >
+                ₹40k–₹60k
+              </button>
+              <button
+                type="button"
+                onClick={() => { setMinPrice('60000'); setMaxPrice(''); }}
+                className={`px-2 py-0.5 border text-[11px] transition-colors ${
+                  minPrice === '60000' && maxPrice === ''
+                    ? 'bg-burgundy text-ivory border-burgundy font-semibold'
+                    : 'bg-ivory-100 text-navy/70 border-beige hover:border-gold'
+                }`}
+              >
+                &gt; ₹60k
+              </button>
             </div>
 
             {hasActiveFilters && (
@@ -222,6 +292,19 @@ export default function MarketplacePage() {
             ))}
           </div>
         </div>
+
+        {isInvalidPriceRange && (
+          <div
+            id="price-range-error"
+            className="flex items-center gap-2 p-2.5 bg-rose-50 border border-rose-300 text-rose-800 text-xs"
+            role="alert"
+          >
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>
+              <strong>Price validation error:</strong> Minimum price (₹{parsedMin.toLocaleString('en-IN')}) cannot exceed maximum price (₹{parsedMax.toLocaleString('en-IN')}). Please adjust your range.
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2 text-xs text-navy/70 px-1">
@@ -232,6 +315,11 @@ export default function MarketplacePage() {
           {hasActiveFilters && (
             <span className="text-[11px] bg-gold/15 text-navy-900 border border-gold/40 px-2 py-0.5 font-medium">
               Filtered
+            </span>
+          )}
+          {isInvalidPriceRange && (
+            <span className="text-[11px] bg-rose-100 text-rose-800 border border-rose-300 px-2 py-0.5 font-semibold">
+              Invalid Price Range
             </span>
           )}
         </div>
@@ -246,7 +334,8 @@ export default function MarketplacePage() {
           )}
           {(minPrice || maxPrice) && (
             <span>
-              Price Range: <span className="font-semibold text-navy">
+              Price Range:{' '}
+              <span className={`font-semibold ${isInvalidPriceRange ? 'text-rose-700 line-through' : 'text-navy'}`}>
                 ₹{minPrice ? Number(minPrice).toLocaleString('en-IN') : '0'} – {maxPrice ? `₹${Number(maxPrice).toLocaleString('en-IN')}` : 'Any'}
               </span>
             </span>
@@ -259,7 +348,9 @@ export default function MarketplacePage() {
           <Tag className="w-12 h-12 text-gold-700 mx-auto mb-3" />
           <h3 className="font-serif text-xl font-bold text-navy mb-1">No Matching Exchange Listings</h3>
           <p className="text-xs text-navy/60 mb-6 leading-relaxed">
-            No philatelic rarities match your active price constraints or filter parameters. Try adjusting your minimum/maximum budget or clearing filters.
+            {isInvalidPriceRange
+              ? `Your minimum price constraint (₹${parsedMin.toLocaleString('en-IN')}) is higher than your maximum price constraint (₹${parsedMax.toLocaleString('en-IN')}). Please enter a valid price range or click below to reset.`
+              : 'No philatelic rarities match your active price constraints or filter parameters. Try adjusting your minimum/maximum budget or clearing filters.'}
           </p>
           <Button
             onClick={handleClearFilters}
