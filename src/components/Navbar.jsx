@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Menu, X, Stamp, ShieldCheck, Landmark } from 'lucide-react';
+import { Menu, X, Stamp, ShieldCheck, Landmark, Heart } from 'lucide-react';
 import Button from './Button';
+import { useWishlist } from '../utils/wishlist';
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { count: wishlistCount } = useWishlist();
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -91,6 +93,19 @@ export default function Navbar() {
 
           <div className="hidden md:flex items-center gap-3">
             <Link
+              to="/wishlist"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-navy hover:text-burgundy border border-beige hover:border-gold transition-colors bg-white/70"
+              title="Saved Specimens Wishlist"
+            >
+              <Heart className={`w-3.5 h-3.5 ${wishlistCount > 0 ? 'fill-rose-600 text-rose-600' : 'text-gold-900'}`} />
+              <span>Wishlist</span>
+              {wishlistCount > 0 && (
+                <span className="ml-0.5 px-1.5 py-0.2 bg-burgundy text-ivory text-[10px] font-bold rounded-full">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
+            <Link
               to="/login"
               className="px-4 py-2 text-sm font-medium text-navy hover:text-burgundy transition-colors"
             >
@@ -145,6 +160,14 @@ export default function Navbar() {
           </nav>
 
           <div className="pt-4 border-t border-beige flex flex-col gap-2">
+            <Link
+              to="/wishlist"
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-full text-center py-2 text-sm font-medium text-navy border border-beige hover:bg-ivory-200 flex items-center justify-center gap-2"
+            >
+              <Heart className={`w-4 h-4 ${wishlistCount > 0 ? 'fill-rose-600 text-rose-600' : 'text-gold-900'}`} />
+              <span>Wishlist ({wishlistCount})</span>
+            </Link>
             <Link
               to="/login"
               onClick={() => setMobileMenuOpen(false)}

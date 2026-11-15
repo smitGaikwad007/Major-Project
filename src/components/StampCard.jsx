@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
-import { Stamp, CheckCircle2, Eye, Plus } from 'lucide-react';
+import { Stamp, CheckCircle2, Eye, Plus, Heart } from 'lucide-react';
 
-export default function StampCard({ stamp, onExamine, onAddToCollection, className = '' }) {
+export default function StampCard({
+  stamp,
+  onExamine,
+  onAddToCollection,
+  onToggleWishlist,
+  isWishlisted = false,
+  className = '',
+}) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -46,6 +53,29 @@ export default function StampCard({ stamp, onExamine, onAddToCollection, classNa
           <div className="absolute top-2 left-2 z-10 bg-navy text-ivory text-[11px] font-serif font-bold px-2 py-0.5 shadow-sm border border-gold/30">
             {faceValue}
           </div>
+
+          {onToggleWishlist && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleWishlist(stamp);
+              }}
+              className={`absolute top-2 right-2 z-20 p-1.5 transition-all shadow-sm border cursor-pointer ${
+                isWishlisted
+                  ? 'bg-rose-50 border-rose-300 text-rose-600 hover:bg-rose-100'
+                  : 'bg-white/90 backdrop-blur-sm border-beige text-navy/40 hover:text-rose-600 hover:border-rose-300'
+              }`}
+              title={isWishlisted ? 'Remove from Wishlist' : 'Save to Wishlist'}
+              aria-label={isWishlisted ? 'Remove from Wishlist' : 'Save to Wishlist'}
+            >
+              <Heart
+                className={`w-3.5 h-3.5 transition-transform active:scale-125 ${
+                  isWishlisted ? 'fill-rose-600 text-rose-600' : ''
+                }`}
+              />
+            </button>
+          )}
 
           <div className="absolute bottom-2 right-2 z-10 bg-burgundy/95 text-ivory text-[10px] font-sans font-medium px-2 py-0.5 shadow-sm">
             {grade}

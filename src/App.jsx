@@ -9,6 +9,7 @@ import CollectionPage from './pages/CollectionPage';
 import PdaPage from './pages/PdaPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import WishlistPage from './pages/WishlistPage';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="pda" element={<PdaPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
+          <Route path="wishlist" element={<WishlistPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
