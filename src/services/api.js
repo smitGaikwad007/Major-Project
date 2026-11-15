@@ -92,10 +92,33 @@ export const healthApi = {
   check: () => request('/health'),
 };
 
+export const auctionApi = {
+  getAll: (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.status) query.append('status', params.status);
+    if (params.category) query.append('category', params.category);
+    if (params.search) query.append('search', params.search);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return request(`/auctions${qs}`);
+  },
+  getById: (id) => request(`/auctions/${id}`),
+  create: (auctionData) =>
+    request('/auctions', {
+      method: 'POST',
+      body: JSON.stringify(auctionData),
+    }),
+  placeBid: (id, bidData) =>
+    request(`/auctions/${id}/bids`, {
+      method: 'POST',
+      body: JSON.stringify(bidData),
+    }),
+};
+
 export default {
   stamps: stampApi,
   collection: collectionApi,
   pda: pdaApi,
   verification: verificationApi,
+  auctions: auctionApi,
   health: healthApi,
 };

@@ -12,6 +12,7 @@ export default function Navbar() {
     { name: 'Home', path: '/' },
     { name: 'Postal Archive', path: '/stamps' },
     { name: 'Marketplace', path: '/marketplace' },
+    { name: 'Auctions', path: '/auctions' },
     { name: 'Collector Circles', path: '/community' },
     { name: 'National PDA', path: '/pda' },
     { name: 'My Vault', path: '/collection' },

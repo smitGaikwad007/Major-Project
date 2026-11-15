@@ -4,6 +4,7 @@ const stampRoutes = require('./routes/stampRoutes');
 const collectionRoutes = require('./routes/collectionRoutes');
 const pdaRoutes = require('./routes/pdaRoutes');
 const verificationRoutes = require('./routes/verificationRoutes');
+const auctionRoutes = require('./routes/auctionRoutes');
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use('/api/stamps', stampRoutes);
 app.use('/api/collection', collectionRoutes);
 app.use('/api/pda', pdaRoutes);
 app.use('/api/verification', verificationRoutes);
+app.use('/api/auctions', auctionRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

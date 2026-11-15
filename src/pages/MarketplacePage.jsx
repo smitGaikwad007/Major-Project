@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import SectionHeading from '../components/SectionHeading';
 import { MARKETPLACE_PREVIEW } from '../data/mockData';
-import { ShieldCheck, MapPin, Tag, ArrowLeft, Lock, Eye, X, CheckCircle2, Search, Filter, ArrowUpDown, RotateCcw, AlertCircle } from 'lucide-react';
+import { ShieldCheck, MapPin, Tag, ArrowLeft, Lock, Eye, X, CheckCircle2, Search, Filter, ArrowUpDown, RotateCcw, AlertCircle, Gavel, ArrowRight } from 'lucide-react';
 import Button from '../components/Button';
 import { Link } from 'react-router-dom';
 import EscrowInquiryModal from '../components/EscrowInquiryModal';
@@ -99,6 +99,22 @@ export default function MarketplacePage() {
         subtitle="Acquire and trade authenticated Indian postage rarities, first day covers, and postal history specimens under our verified provenance protocol."
         align="left"
       />
+
+      {/* Bourse Navigation Switcher */}
+      <div className="flex flex-wrap items-center gap-3 mb-6 border-b border-beige pb-4">
+        <span className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-burgundy text-ivory border border-burgundy shadow-xs">
+          Fixed-Price Bourse
+        </span>
+        <Link
+          to="/auctions"
+          className="group inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-navy bg-white border border-beige hover:border-gold hover:text-burgundy transition-all"
+        >
+          <Gavel className="w-3.5 h-3.5 text-gold-900 group-hover:text-burgundy" />
+          <span>Live Archival Auctions</span>
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-0.5" title="Active Bidding Live"></span>
+          <ArrowRight className="w-3.5 h-3.5 ml-1 text-navy/40 group-hover:text-burgundy group-hover:translate-x-0.5 transition-transform" />
+        </Link>
+      </div>
 
       <div className="mb-8 p-4 bg-navy-950 text-ivory flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-gold/30 shadow-sm">
         <div className="flex items-center gap-3">
