@@ -15,6 +15,7 @@ export default function Navbar() {
     { name: 'Collector Circles', path: '/community' },
     { name: 'National PDA', path: '/pda' },
     { name: 'My Vault', path: '/collection' },
+    { name: 'Dashboard', path: '/dashboard' },
   ];
 
   return (

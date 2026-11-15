@@ -11,6 +11,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import WishlistPage from './pages/WishlistPage';
 import MarketplaceListingDetailPage from './pages/MarketplaceListingDetailPage';
+import CollectorDashboardPage from './pages/CollectorDashboardPage';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="marketplace/listing/:id" element={<MarketplaceListingDetailPage />} />
           <Route path="community" element={<CommunityPage />} />
           <Route path="collection" element={<CollectionPage />} />
+          <Route path="dashboard" element={<CollectorDashboardPage />} />
           <Route path="pda" element={<PdaPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
