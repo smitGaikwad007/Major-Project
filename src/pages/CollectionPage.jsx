@@ -31,6 +31,7 @@ export default function CollectionPage() {
   const [actionMessage, setActionMessage] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [itemToDelete, setItemToDelete] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -374,7 +375,7 @@ export default function CollectionPage() {
 
                     <button
                       type="button"
-                      onClick={() => handleDeleteItem(item.id, stamp.name)}
+                      onClick={() => setItemToDelete({ id: item.id, name: stamp.name || 'Specimen' })}
                       disabled={deletingId === item.id}
                       className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-700 hover:text-rose-900 hover:bg-rose-50 px-2 py-1 transition-colors"
                       title="Deaccession specimen from vault"
@@ -521,6 +522,61 @@ export default function CollectionPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {itemToDelete && (
+        <div className="fixed inset-0 z-50 bg-navy-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-gold/40 max-w-md w-full p-6 sm:p-8 relative shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setItemToDelete(null)}
+              className="absolute top-4 right-4 text-navy/50 hover:text-navy p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2 text-xs font-mono text-rose-800 uppercase tracking-wider">
+                <AlertCircle className="w-4 h-4 text-rose-700 shrink-0" />
+                <span>VAULT DEACCESSION CONFIRMATION</span>
+              </div>
+              <h3 className="font-serif text-2xl font-bold text-navy">
+                Confirm Deaccession
+              </h3>
+              <p className="text-xs text-navy/70 mt-2 leading-relaxed">
+                Are you sure you want to deaccession <strong className="font-serif text-navy font-bold">"{itemToDelete.name}"</strong> from your private vault?
+              </p>
+              <div className="mt-3 p-3 bg-rose-50 border border-rose-200 text-rose-900 text-[11px] leading-relaxed">
+                This action will permanently delete the specimen record and provenance data from your PostgreSQL archive.
+              </div>
+            </div>
+
+            <div className="pt-3 flex items-center justify-end gap-3 border-t border-beige">
+              <Button
+                onClick={() => setItemToDelete(null)}
+                variant="outline"
+                size="md"
+                type="button"
+                disabled={deletingId === itemToDelete.id}
+              >
+                Cancel
+              </Button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const target = itemToDelete;
+                  setItemToDelete(null);
+                  await handleDeleteItem(target.id, target.name);
+                }}
+                disabled={deletingId === itemToDelete.id}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-ivory bg-rose-700 hover:bg-rose-800 transition-colors shadow-sm disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{deletingId === itemToDelete.id ? 'Deaccessioning...' : 'Confirm Deaccession'}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
