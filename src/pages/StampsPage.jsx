@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import SectionHeading from '../components/SectionHeading';
 import StampCard from '../components/StampCard';
 import { stampApi, collectionApi } from '../services/api';
-import { Filter, Search, ArrowLeft, RefreshCw, Plus, X, CheckCircle2, AlertCircle, Eye, Stamp, Calendar, Globe, Tag, Layers } from 'lucide-react';
+import { Filter, Search, ArrowLeft, RefreshCw, Plus, X, CheckCircle2, AlertCircle, Eye, Stamp, Calendar, Globe, Tag, Layers, ArrowUpDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Button from '../components/Button';
 
@@ -12,10 +12,12 @@ export default function StampsPage() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [sortBy, setSortBy] = useState('year-asc');
   const [selectedStamp, setSelectedStamp] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [actionMessage, setActionMessage] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [imagePreviewError, setImagePreviewError] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -78,6 +80,7 @@ export default function StampsPage() {
         description: '',
         image: '',
       });
+      setImagePreviewError(false);
       setActionMessage({ type: 'success', text: `Archival stamp "${res.data.name}" added to the national catalog!` });
       await loadStamps();
       setTimeout(() => setActionMessage(null), 4000);
@@ -105,6 +108,24 @@ export default function StampsPage() {
       String(stamp.year || '').includes(q);
 
     return matchesCategory && matchesSearch;
+  });
+
+  const sortedStamps = [...filteredStamps].sort((a, b) => {
+    if (sortBy === 'year-asc') {
+      const diff = (Number(a.year) || 0) - (Number(b.year) || 0);
+      return diff !== 0 ? diff : (a.name || '').localeCompare(b.name || '');
+    }
+    if (sortBy === 'year-desc') {
+      const diff = (Number(b.year) || 0) - (Number(a.year) || 0);
+      return diff !== 0 ? diff : (a.name || '').localeCompare(b.name || '');
+    }
+    if (sortBy === 'name-asc') {
+      return (a.name || '').localeCompare(b.name || '');
+    }
+    if (sortBy === 'name-desc') {
+      return (b.name || '').localeCompare(a.name || '');
+    }
+    return 0;
   });
 
   return (
@@ -182,28 +203,48 @@ export default function StampsPage() {
         </div>
       )}
 
-      <div className="mb-10 p-4 bg-white border border-beige flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between shadow-sm">
-        <div className="relative w-full lg:w-96">
-          <Search className="w-4 h-4 text-navy/40 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search by name, era, country, year, or keyword..."
-            className="w-full pl-9 pr-8 py-2 text-xs bg-ivory-100 border border-beige focus:outline-none focus:border-gold"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-navy/40 hover:text-navy"
+      <div className="mb-6 p-4 bg-white border border-beige flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+          <div className="relative w-full sm:w-72 lg:w-80">
+            <Search className="w-4 h-4 text-navy/40 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search by name, era, country, year, or keyword..."
+              className="w-full pl-9 pr-8 py-2 text-xs bg-ivory-100 border border-beige focus:outline-none focus:border-gold text-navy"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-navy/40 hover:text-navy"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <label htmlFor="sort-by-select" className="font-semibold text-navy flex items-center gap-1 text-xs shrink-0 cursor-pointer">
+              <ArrowUpDown className="w-3.5 h-3.5 text-gold-900" /> Sort:
+            </label>
+            <select
+              id="sort-by-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="py-2 px-2.5 text-xs bg-ivory-100 border border-beige focus:outline-none focus:border-gold text-navy font-medium cursor-pointer"
             >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
+              <option value="year-asc">Year: Oldest First</option>
+              <option value="year-desc">Year: Newest First</option>
+              <option value="name-asc">Name: A to Z</option>
+              <option value="name-desc">Name: Z to A</option>
+            </select>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs text-navy/70 overflow-x-auto pb-1 lg:pb-0">
+        <div className="flex items-center gap-1.5 text-xs text-navy/70 overflow-x-auto pb-1 xl:pb-0">
           <span className="font-semibold text-navy flex items-center gap-1 shrink-0">
             <Filter className="w-3.5 h-3.5 text-gold-900" /> Filter:
           </span>
@@ -223,6 +264,37 @@ export default function StampsPage() {
           ))}
         </div>
       </div>
+
+      {!loading && !error && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-2 text-xs text-navy/70 px-1">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs font-semibold text-navy">
+              Showing {sortedStamps.length} of {stamps.length} {stamps.length === 1 ? 'specimen' : 'specimens'}
+            </span>
+            {(searchQuery.trim() || selectedCategory !== 'all') && (
+              <span className="text-[11px] bg-gold/15 text-navy-900 border border-gold/40 px-2 py-0.5 font-medium">
+                Filtered
+              </span>
+            )}
+          </div>
+
+          <div className="text-[11px] font-mono text-navy/60 flex items-center gap-3">
+            <span>
+              Order: <span className="font-semibold text-navy">
+                {sortBy === 'year-asc' && 'Year: Oldest First'}
+                {sortBy === 'year-desc' && 'Year: Newest First'}
+                {sortBy === 'name-asc' && 'Name: A to Z'}
+                {sortBy === 'name-desc' && 'Name: Z to A'}
+              </span>
+            </span>
+            {selectedCategory !== 'all' && (
+              <span className="hidden sm:inline">
+                Era: <span className="font-semibold text-navy">{selectedCategory}</span>
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
@@ -257,7 +329,7 @@ export default function StampsPage() {
         </div>
       )}
 
-      {!loading && !error && filteredStamps.length === 0 && (
+      {!loading && !error && sortedStamps.length === 0 && (
         <div className="p-12 bg-white border border-dashed border-beige-dark text-center max-w-xl mx-auto my-10">
           <Stamp className="w-12 h-12 text-gold-700 mx-auto mb-3" />
           <h3 className="font-serif text-xl font-bold text-navy mb-1">No Matching Specimens Cataloged</h3>
@@ -277,9 +349,9 @@ export default function StampsPage() {
         </div>
       )}
 
-      {!loading && !error && filteredStamps.length > 0 && (
+      {!loading && !error && sortedStamps.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {filteredStamps.map((stamp) => (
+          {sortedStamps.map((stamp) => (
             <StampCard
               key={stamp.id}
               stamp={stamp}
@@ -500,9 +572,57 @@ export default function StampsPage() {
                   type="url"
                   placeholder="https://example.com/stamp-scan.jpg"
                   value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, image: e.target.value });
+                    setImagePreviewError(false);
+                  }}
                   className="w-full px-3 py-2 bg-ivory-50 border border-beige focus:outline-none focus:border-burgundy"
                 />
+
+                {formData.image.trim() && (
+                  <div className="mt-2.5 p-3 bg-ivory-100 border border-beige flex items-center gap-3">
+                    <div className="relative w-16 h-16 bg-white border border-beige overflow-hidden shrink-0 flex items-center justify-center shadow-inner">
+                      {!imagePreviewError ? (
+                        <img
+                          src={formData.image.trim()}
+                          alt="Specimen live preview"
+                          className="w-full h-full object-cover filter contrast-[1.03]"
+                          onError={() => setImagePreviewError(true)}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-rose-50 flex flex-col items-center justify-center text-rose-600 p-1 text-center">
+                          <AlertCircle className="w-5 h-5 mb-0.5" />
+                          <span className="text-[9px] font-mono leading-none">Error</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-xs min-w-0 flex-1">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-navy/60 font-semibold">
+                          Live Scan Preview
+                        </span>
+                        {!imagePreviewError ? (
+                          <span className="text-[10px] font-mono text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-1.5 py-0.5">
+                            Valid Image Link
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-mono text-rose-700 font-semibold bg-rose-50 border border-rose-200 px-1.5 py-0.5">
+                            Broken Link
+                          </span>
+                        )}
+                      </div>
+                      {!imagePreviewError ? (
+                        <p className="text-[11px] text-navy/70 truncate">
+                          Specimen image rendered successfully for catalogue.
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-rose-700 leading-tight">
+                          Unable to render scan from this URL. Please verify the link address.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-3">
