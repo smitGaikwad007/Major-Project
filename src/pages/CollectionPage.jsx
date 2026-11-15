@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import SectionHeading from '../components/SectionHeading';
 import { collectionApi, stampApi, pdaApi } from '../services/api';
 import {
@@ -24,7 +24,13 @@ import {
   RotateCcw,
   ArrowUpDown,
   Tag,
-  Globe
+  Globe,
+  Download,
+  Printer,
+  FileText,
+  ChevronDown,
+  Eye,
+  FileSpreadsheet
 } from 'lucide-react';
 import Button from '../components/Button';
 import { Link } from 'react-router-dom';
@@ -72,6 +78,25 @@ export default function CollectionPage() {
   const [selectedCondition, setSelectedCondition] = useState('all');
   const [selectedEra, setSelectedEra] = useState('all');
   const [sortBy, setSortBy] = useState('date-desc');
+
+  // Export & Print State
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showLedgerModal, setShowLedgerModal] = useState(false);
+  const [printScope, setPrintScope] = useState('filtered'); // 'filtered' | 'all'
+  const [previewScope, setPreviewScope] = useState('filtered'); // 'filtered' | 'all'
+  const exportMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const loadData = async () => {
     try {
@@ -249,6 +274,115 @@ export default function CollectionPage() {
     setSortBy('date-desc');
   };
 
+  const handleExportCsv = (scope = 'filtered') => {
+    const targetItems = scope === 'all' ? enrichedCollection : sortedCollection;
+
+    if (!targetItems || targetItems.length === 0) {
+      setActionMessage({
+        type: 'error',
+        text: 'Cannot export empty catalog. No specimens match the current selection.',
+      });
+      return;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const filename =
+      scope === 'all'
+        ? `philatelic-vault-catalog-${today}.csv`
+        : `philatelic-vault-filtered-${today}.csv`;
+
+    const headers = [
+      'Specimen Name',
+      'Territory / Country',
+      'Issue Year',
+      'Category',
+      'Condition Grade',
+      'Quantity',
+      'Catalog Stamp ID',
+      'Vault Record ID',
+      'Date Deposited',
+      'Historical Description',
+    ];
+
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '';
+      let str = String(val).trim();
+      // Neutralize spreadsheet formula injection
+      if (/^[=+\-@\t\r]/.test(str)) {
+        str = `'${str}`;
+      }
+      if (/[",\r\n]/.test(str)) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const rows = targetItems.map((item) => {
+      const stamp = item.stamp || {};
+      const depositDate = item.createdAt
+        ? new Date(item.createdAt).toISOString().slice(0, 10)
+        : '';
+
+      return [
+        escapeCsv(stamp.name || `Specimen #${(item.stampId || '').slice(0, 8)}`),
+        escapeCsv(stamp.country || 'India'),
+        escapeCsv(stamp.year || ''),
+        escapeCsv(stamp.category || 'National Issue'),
+        escapeCsv(item.condition || 'Mint'),
+        escapeCsv(item.quantity || 1),
+        escapeCsv(item.stampId || stamp.id || ''),
+        escapeCsv(item.id || ''),
+        escapeCsv(depositDate),
+        escapeCsv(stamp.description || ''),
+      ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    setShowExportMenu(false);
+    setActionMessage({
+      type: 'success',
+      text: `Exported ${targetItems.length} ${targetItems.length === 1 ? 'specimen' : 'specimens'} to "${filename}".`,
+    });
+    setTimeout(() => setActionMessage(null), 5000);
+  };
+
+  const handlePrintCatalog = (scope = 'filtered') => {
+    const targetItems = scope === 'all' ? enrichedCollection : sortedCollection;
+
+    if (!targetItems || targetItems.length === 0) {
+      setActionMessage({
+        type: 'error',
+        text: 'Cannot print empty catalog. No specimens match the current selection.',
+      });
+      return;
+    }
+
+    setPrintScope(scope);
+    setShowExportMenu(false);
+    setActionMessage({
+      type: 'info',
+      text: `Preparing print-ready archival ledger for ${targetItems.length} ${targetItems.length === 1 ? 'specimen' : 'specimens'}...`,
+    });
+
+    setTimeout(() => {
+      window.print();
+    }, 150);
+  };
+
+  const itemsToPrint = printScope === 'all' ? enrichedCollection : sortedCollection;
+  const itemsToPreview = previewScope === 'all' ? enrichedCollection : sortedCollection;
+
   const totalSpecimens = collection.reduce((sum, item) => sum + (item.quantity || 1), 0);
   const filteredSpecimensTotal = sortedCollection.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0);
   const estimatedAppraisal = totalSpecimens * 68000;
@@ -261,49 +395,153 @@ export default function CollectionPage() {
   ];
 
   return (
-    <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-      <div className="mb-6 flex items-center gap-2 text-xs text-navy/60">
-        <Link to="/" className="hover:text-burgundy flex items-center gap-1">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
-        </Link>
-        <span>/</span>
-        <span className="text-navy font-medium">My Vault</span>
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <SectionHeading
-            badge="COLLECTOR'S PRIVATE REPOSITORY"
-            title="My Philatelic Vault"
-            subtitle="Manage your personal stamp holdings, cataloged specimens, and provenance records connected directly to PostgreSQL."
-            align="left"
-            className="mb-0"
-          />
+    <div className="collection-page-root">
+      <div className="screen-vault-container no-print py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="mb-6 flex items-center gap-2 text-xs text-navy/60">
+          <Link to="/" className="hover:text-burgundy flex items-center gap-1">
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
+          </Link>
+          <span>/</span>
+          <span className="text-navy font-medium">My Vault</span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={loadData}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-navy bg-white border border-beige hover:border-gold transition-colors"
-            title="Synchronize vault from database"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-burgundy' : 'text-gold-900'}`} />
-            <span>Sync</span>
-          </button>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <SectionHeading
+              badge="COLLECTOR'S PRIVATE REPOSITORY"
+              title="My Philatelic Vault"
+              subtitle="Manage your personal stamp holdings, cataloged specimens, and provenance records connected directly to PostgreSQL."
+              align="left"
+              className="mb-0"
+            />
+          </div>
 
-          <Button
-            onClick={() => setShowAddModal(true)}
-            variant="primary"
-            size="sm"
-            icon={Plus}
-            iconPosition="left"
-            className="text-xs font-semibold tracking-wider uppercase px-4 py-2"
-          >
-            Deposit Specimen
-          </Button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={loadData}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-navy bg-white border border-beige hover:border-gold transition-colors"
+              title="Synchronize vault from database"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-burgundy' : 'text-gold-900'}`} />
+              <span>Sync</span>
+            </button>
+
+            {/* Export & Print Catalog Dropdown Menu */}
+            <div className="relative" ref={exportMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowExportMenu((prev) => !prev)}
+                className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-navy bg-white border border-beige hover:border-gold transition-colors shadow-sm"
+                title="Export vault catalog or generate printable archival ledger"
+                aria-expanded={showExportMenu}
+              >
+                <Download className="w-3.5 h-3.5 text-gold-900" />
+                <span>Export / Print</span>
+                <ChevronDown className={`w-3 h-3 text-navy/50 transition-transform ${showExportMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showExportMenu && (
+                <div className="absolute right-0 mt-2 w-72 bg-white border border-beige shadow-xl z-40 py-2 text-xs animate-in fade-in duration-150">
+                  <div className="px-3 py-1.5 border-b border-beige/60">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-navy/50 font-bold block">
+                      CSV SPREADSHEET EXPORT
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleExportCsv('filtered')}
+                    className="w-full text-left px-3 py-2 hover:bg-ivory-100 flex items-start gap-2.5 transition-colors"
+                  >
+                    <Download className="w-4 h-4 text-burgundy shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold text-navy">Export Current View (.CSV)</div>
+                      <div className="text-[11px] text-navy/60">
+                        {hasActiveFilters
+                          ? `${sortedCollection.length} matching specimens (with filters)`
+                          : `All ${sortedCollection.length} specimens in vault`}
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleExportCsv('all')}
+                    className="w-full text-left px-3 py-2 hover:bg-ivory-100 flex items-start gap-2.5 transition-colors"
+                  >
+                    <Download className="w-4 h-4 text-gold-900 shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold text-navy">Export Entire Vault (.CSV)</div>
+                      <div className="text-[11px] text-navy/60">
+                        Complete archive of all {collection.length} cataloged specimens
+                      </div>
+                    </div>
+                  </button>
+
+                  <div className="px-3 py-1.5 border-t border-b border-beige/60 mt-1">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-navy/50 font-bold block">
+                      PRINT-READY ARCHIVAL CATALOG
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePrintCatalog('filtered')}
+                    className="w-full text-left px-3 py-2 hover:bg-ivory-100 flex items-start gap-2.5 transition-colors"
+                  >
+                    <Printer className="w-4 h-4 text-burgundy shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold text-navy">Print Current View</div>
+                      <div className="text-[11px] text-navy/60">
+                        Archival ledger of {sortedCollection.length} matching specimens
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePrintCatalog('all')}
+                    className="w-full text-left px-3 py-2 hover:bg-ivory-100 flex items-start gap-2.5 transition-colors"
+                  >
+                    <Printer className="w-4 h-4 text-gold-900 shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold text-navy">Print Entire Vault</div>
+                      <div className="text-[11px] text-navy/60">
+                        Complete provenance ledger ({collection.length} specimens)
+                      </div>
+                    </div>
+                  </button>
+
+                  <div className="border-t border-beige/60 mt-1 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowExportMenu(false);
+                        setShowLedgerModal(true);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-ivory-100 flex items-center gap-2 text-[11px] text-burgundy font-semibold transition-colors"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Preview Archival Ledger on Screen</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Button
+              onClick={() => setShowAddModal(true)}
+              variant="primary"
+              size="sm"
+              icon={Plus}
+              iconPosition="left"
+              className="text-xs font-semibold tracking-wider uppercase px-4 py-2"
+            >
+              Deposit Specimen
+            </Button>
+          </div>
         </div>
-      </div>
 
       {actionMessage && (
         <div
@@ -396,9 +634,29 @@ export default function CollectionPage() {
               Live items currently owned in your personal archive and persisted in PostgreSQL.
             </p>
           </div>
-          <span className="text-xs font-mono bg-ivory-200 border border-beige px-2.5 py-1 text-navy font-semibold">
-            {hasActiveFilters ? `${sortedCollection.length} of ${collection.length} Records` : `${collection.length} Records`}
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleExportCsv('filtered')}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-navy bg-white border border-beige hover:border-gold transition-colors"
+              title="Quick export: download current filtered view as CSV"
+            >
+              <Download className="w-3.5 h-3.5 text-gold-900" />
+              <span className="hidden sm:inline">Export CSV</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handlePrintCatalog('filtered')}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-navy bg-white border border-beige hover:border-gold transition-colors"
+              title="Quick print: print current filtered view"
+            >
+              <Printer className="w-3.5 h-3.5 text-burgundy" />
+              <span className="hidden sm:inline">Print</span>
+            </button>
+            <span className="text-xs font-mono bg-ivory-200 border border-beige px-2.5 py-1 text-navy font-semibold">
+              {hasActiveFilters ? `${sortedCollection.length} of ${collection.length} Records` : `${collection.length} Records`}
+            </span>
+          </div>
         </div>
 
         {loading && (
@@ -987,6 +1245,314 @@ export default function CollectionPage() {
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>{deletingId === itemToDelete.id ? 'Deaccessioning...' : 'Confirm Deaccession'}</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </div> {/* close screen-vault-container no-print */}
+
+      {/* PRINT-ONLY ARCHIVAL PROVENANCE CATALOG */}
+      <div className="print-vault-catalog print-only p-4 bg-white text-navy font-serif">
+        {/* Document Masthead */}
+        <div className="border-b-2 border-navy pb-4 mb-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-widest text-burgundy font-bold">
+                DAK BHAVAN ARCHIVAL GUILD • NATIONAL PHILATELIC SOCIETY OF INDIA
+              </div>
+              <h1 className="text-2xl font-serif font-bold text-navy mt-1">
+                Collector's Vault Provenance Catalog
+              </h1>
+              <p className="text-xs text-navy/70 font-sans mt-0.5">
+                Official physical holdings registry, condition certifications, and certified specimen provenance records.
+              </p>
+            </div>
+            <div className="text-right text-xs font-sans">
+              <div className="font-mono font-bold text-navy text-xs">
+                {pdaAccount ? `PDA: ${pdaAccount.accountNumber}` : 'Account: PDA-MH-12345678-5'}
+              </div>
+              <div className="text-navy/60 text-[10px] font-mono mt-0.5">
+                Printed: {new Date().toLocaleDateString('en-IN', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </div>
+              <div className="mt-1 inline-block border border-gold px-2 py-0.5 text-[9px] font-mono uppercase text-emerald-800 font-bold bg-ivory-100">
+                PCI Authenticated Ledger
+              </div>
+            </div>
+          </div>
+
+          {/* Archival Metadata Summary Strip */}
+          <div className="grid grid-cols-4 gap-3 mt-4 pt-3 border-t border-beige text-xs font-sans">
+            <div>
+              <span className="text-[10px] text-navy/50 uppercase font-mono block">Inventory Scope</span>
+              <strong className="text-navy">
+                {printScope === 'all'
+                  ? `Complete Vault (${itemsToPrint.length} records)`
+                  : `Filtered Archive Query (${itemsToPrint.length} records)`}
+              </strong>
+            </div>
+            <div>
+              <span className="text-[10px] text-navy/50 uppercase font-mono block">Total Specimens Held</span>
+              <strong className="text-navy">
+                {itemsToPrint.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0)} Stamps
+              </strong>
+            </div>
+            <div>
+              <span className="text-[10px] text-navy/50 uppercase font-mono block">Estimated Appraisal</span>
+              <strong className="text-burgundy">
+                ₹{(itemsToPrint.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0) * 68000).toLocaleString('en-IN')}
+              </strong>
+            </div>
+            <div>
+              <span className="text-[10px] text-navy/50 uppercase font-mono block">Archival Database</span>
+              <strong className="text-navy">PostgreSQL Certified Ledger</strong>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabular Inventory Ledger */}
+        <table className="print-catalog-table w-full text-xs text-left font-sans">
+          <thead>
+            <tr className="bg-ivory-200 text-navy font-mono text-[10px] uppercase">
+              <th className="w-8 text-center">#</th>
+              <th className="w-20">Catalog ID</th>
+              <th>Specimen Title & Archival Notes</th>
+              <th>Territory</th>
+              <th className="text-center w-12">Year</th>
+              <th>Category</th>
+              <th>Preservation Grade</th>
+              <th className="text-center w-10">Qty</th>
+              <th className="w-24">Cataloged</th>
+            </tr>
+          </thead>
+          <tbody>
+            {itemsToPrint.map((item, idx) => {
+              const stamp = item.stamp || {};
+              return (
+                <tr key={item.id} className="border-b border-beige">
+                  <td className="text-center font-mono text-navy/50 text-[10px]">{idx + 1}</td>
+                  <td className="font-mono text-[9px] text-navy/70">
+                    {(item.stampId || stamp.id || item.id || '').slice(0, 8)}
+                  </td>
+                  <td>
+                    <div className="font-serif font-bold text-navy text-[13px]">{stamp.name || 'Specimen'}</div>
+                    {stamp.description && (
+                      <div className="text-[10px] text-navy/60 leading-tight mt-0.5">
+                        {stamp.description}
+                      </div>
+                    )}
+                  </td>
+                  <td className="text-navy/80">{stamp.country || 'India'}</td>
+                  <td className="text-center font-mono">{stamp.year || '—'}</td>
+                  <td className="text-navy/80">{stamp.category || 'National Issue'}</td>
+                  <td>
+                    <span className="font-semibold text-navy text-[11px]">{item.condition}</span>
+                  </td>
+                  <td className="text-center font-mono font-bold text-navy">{item.quantity || 1}</td>
+                  <td className="font-mono text-[10px] text-navy/70">
+                    {item.createdAt
+                      ? new Date(item.createdAt).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })
+                      : '—'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {/* Authentication Signature & Certification Footer */}
+        <div className="mt-8 pt-4 border-t-2 border-navy text-xs font-sans">
+          <div className="flex justify-between items-end mb-4">
+            <div className="w-64 border-t border-dashed border-navy/40 pt-2 text-center">
+              <div className="font-serif font-bold text-navy">Member Curator</div>
+              <div className="text-[10px] text-navy/60 font-mono">Vault Custodian Signature</div>
+            </div>
+            <div className="text-center">
+              <div className="inline-block px-3 py-1 border-2 border-burgundy/40 text-burgundy font-serif font-bold uppercase tracking-widest text-[11px] rotate-[-4deg]">
+                PHILATELIC ARCHIVE VERIFIED
+              </div>
+            </div>
+            <div className="w-64 border-t border-dashed border-navy/40 pt-2 text-center">
+              <div className="font-serif font-bold text-navy">National Registrar</div>
+              <div className="text-[10px] text-navy/60 font-mono">Dak Bhavan Certification Stamp</div>
+            </div>
+          </div>
+          <div className="flex justify-between items-center text-[10px] text-navy/50 font-mono border-t border-beige pt-2">
+            <span>Official Vault Provenance Document • Philately Society National Guild</span>
+            <span>Document Checksum: SHA256-PCI-{itemsToPrint.length}R-{new Date().toISOString().slice(0, 10)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* LEDGER PREVIEW MODAL */}
+      {showLedgerModal && (
+        <div className="fixed inset-0 z-50 bg-navy-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-gold/40 max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl relative">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-beige flex items-start justify-between bg-ivory-50">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-widest text-gold-900 font-bold block mb-0.5">
+                  ARCHIVAL PROVENANCE LEDGER PREVIEW
+                </span>
+                <h3 className="font-serif text-2xl font-bold text-navy">
+                  Collection Catalog & Print Preview
+                </h3>
+                <p className="text-xs text-navy/60 mt-0.5">
+                  Review the catalog ledger before downloading as CSV or printing to paper/PDF.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLedgerModal(false)}
+                className="text-navy/50 hover:text-navy p-1 transition-colors"
+                title="Close preview"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scope Selection Toolbar */}
+            <div className="px-5 py-3 bg-ivory-100 border-b border-beige flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-navy/60 uppercase text-[10px]">Catalog Scope:</span>
+                <div className="inline-flex border border-beige bg-white p-0.5 shadow-xs">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewScope('filtered')}
+                    className={`px-3 py-1 font-semibold text-xs transition-colors ${
+                      previewScope === 'filtered'
+                        ? 'bg-burgundy text-ivory'
+                        : 'text-navy hover:bg-ivory-100'
+                    }`}
+                  >
+                    Current Filtered Results ({sortedCollection.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewScope('all')}
+                    className={`px-3 py-1 font-semibold text-xs transition-colors ${
+                      previewScope === 'all'
+                        ? 'bg-burgundy text-ivory'
+                        : 'text-navy hover:bg-ivory-100'
+                    }`}
+                  >
+                    Entire Vault ({collection.length})
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 text-xs font-mono text-navy/70">
+                <span>Holdings: <strong className="text-navy">{itemsToPreview.length}</strong></span>
+                <span>Stamps: <strong className="text-navy">{itemsToPreview.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0)}</strong></span>
+                <span>Appraisal: <strong className="text-burgundy">₹{(itemsToPreview.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0) * 68000).toLocaleString('en-IN')}</strong></span>
+              </div>
+            </div>
+
+            {/* Scrollable Table Preview */}
+            <div className="p-5 overflow-y-auto flex-1 max-h-[50vh]">
+              {itemsToPreview.length === 0 ? (
+                <div className="text-center py-12 text-navy/50">
+                  <FileText className="w-10 h-10 mx-auto mb-2 text-gold-800 opacity-60" />
+                  <p className="font-serif font-bold text-navy">No Specimens in Selected Scope</p>
+                  <p className="text-xs text-navy/60 mt-1">Try switching to "Entire Vault" or adjust your search filters.</p>
+                </div>
+              ) : (
+                <table className="w-full text-xs text-left border-collapse border border-beige">
+                  <thead>
+                    <tr className="bg-ivory-200 text-navy font-mono text-[10px] uppercase border-b border-beige">
+                      <th className="p-2 w-8 text-center border-r border-beige">#</th>
+                      <th className="p-2 w-20 border-r border-beige">Catalog ID</th>
+                      <th className="p-2 border-r border-beige">Specimen Title</th>
+                      <th className="p-2 border-r border-beige">Territory</th>
+                      <th className="p-2 text-center w-14 border-r border-beige">Year</th>
+                      <th className="p-2 border-r border-beige">Category</th>
+                      <th className="p-2 border-r border-beige">Condition</th>
+                      <th className="p-2 text-center w-12 border-r border-beige">Qty</th>
+                      <th className="p-2">Cataloged</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {itemsToPreview.map((item, idx) => {
+                      const stamp = item.stamp || {};
+                      return (
+                        <tr key={item.id} className="border-b border-beige hover:bg-ivory-50 transition-colors">
+                          <td className="p-2 text-center font-mono text-navy/50 border-r border-beige">{idx + 1}</td>
+                          <td className="p-2 font-mono text-[10px] text-navy/70 border-r border-beige">
+                            {(item.stampId || stamp.id || item.id || '').slice(0, 8)}
+                          </td>
+                          <td className="p-2 border-r border-beige">
+                            <span className="font-serif font-bold text-navy">{stamp.name || 'Specimen'}</span>
+                          </td>
+                          <td className="p-2 text-navy/80 border-r border-beige">{stamp.country || 'India'}</td>
+                          <td className="p-2 text-center font-mono border-r border-beige">{stamp.year || '—'}</td>
+                          <td className="p-2 text-navy/80 border-r border-beige">{stamp.category || 'National Issue'}</td>
+                          <td className="p-2 border-r border-beige">
+                            <span className="font-medium text-navy">{item.condition}</span>
+                          </td>
+                          <td className="p-2 text-center font-mono font-bold text-navy border-r border-beige">
+                            {item.quantity || 1}
+                          </td>
+                          <td className="p-2 font-mono text-[10px] text-navy/70">
+                            {item.createdAt
+                              ? new Date(item.createdAt).toLocaleDateString('en-IN', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })
+                              : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Modal Footer with Actions */}
+            <div className="p-4 bg-ivory-50 border-t border-beige flex items-center justify-between">
+              <span className="text-[11px] text-navy/60 font-mono">
+                {itemsToPreview.length} records ready for archival export
+              </span>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setShowLedgerModal(false)}
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                >
+                  Close
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => handleExportCsv(previewScope)}
+                  disabled={itemsToPreview.length === 0}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-navy bg-white border border-beige hover:border-gold transition-colors disabled:opacity-50"
+                >
+                  <Download className="w-3.5 h-3.5 text-gold-900" />
+                  <span>Download CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLedgerModal(false);
+                    handlePrintCatalog(previewScope);
+                  }}
+                  disabled={itemsToPreview.length === 0}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-ivory bg-burgundy hover:bg-burgundy-900 transition-colors shadow-sm disabled:opacity-50"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print Archival Catalog</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

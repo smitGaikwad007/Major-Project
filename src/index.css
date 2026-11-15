@@ -73,3 +73,65 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #B69A65;
 }
+
+/* ==========================================================================
+   PRINT-READY ARCHIVAL CATALOG STYLES
+   ========================================================================== */
+@media print {
+  @page {
+    margin: 1.2cm;
+    size: auto;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #182536 !important;
+    font-size: 10pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  nav,
+  footer,
+  header,
+  .screen-vault-container,
+  .no-print {
+    display: none !important;
+  }
+
+  .print-vault-catalog,
+  .print-only {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-catalog-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .print-catalog-table thead {
+    display: table-header-group !important;
+  }
+
+  .print-catalog-table tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .print-catalog-table th,
+  .print-catalog-table td {
+    border: 1px solid #D5CDBD !important;
+    padding: 6px 8px !important;
+  }
+}
+
+@media screen {
+  .print-vault-catalog,
+  .print-only {
+    display: none !important;
+  }
+}
